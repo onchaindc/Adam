@@ -1,0 +1,24 @@
+{
+  "name": "adam",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Adam A2MCP Agent Service Provider",
+  "packageManager": "pnpm@11.15.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm --filter @adam/contracts build && pnpm --filter @adam/api build",
+    "dev": "pnpm build && pnpm start",
+    "start": "pnpm --filter @adam/api start",
+    "lint": "pnpm typecheck && node scripts/verify-format.mjs",
+    "test": "pnpm build && pnpm --filter @adam/api test",
+    "typecheck": "pnpm --filter @adam/contracts build && pnpm --filter @adam/api typecheck",
+    "verify:architecture": "node scripts/verify-architecture.mjs",
+    "verify": "pnpm lint && pnpm build && pnpm test && pnpm verify:architecture"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "7.0.2"
+  }
+}

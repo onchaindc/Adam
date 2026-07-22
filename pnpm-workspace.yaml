@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+
+confirmModulesPurge: false
+
+nodeLinker: isolated
+
+preferOffline: true

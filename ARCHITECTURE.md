@@ -2,11 +2,11 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Proposed for Milestone 0 review |
-| Version | 0.1 |
+| Status | Sprint 0 approved; Sprint 1 implemented pending review |
+| Version | 0.2 |
 | Last reviewed | July 22, 2026 |
-| Scope | Architecture and foundation only |
-| Implementation status | No runtime or business logic exists |
+| Scope | Architecture plus Sprint 1 foundation |
+| Implementation status | Runtime foundation exists; investigation logic does not |
 
 ## 1. Purpose
 
@@ -148,7 +148,7 @@ a separate architecture decision and explicit approval.
 | AD-007 | Clone repositories into per-request ephemeral workspaces. | This prevents cross-request contamination and avoids retaining source code unnecessarily. |
 | AD-008 | Maintain a normalized evidence model before generating conclusions. | Findings must be traceable, deduplicated, ranked, and testable independently of presentation. |
 | AD-009 | Keep service orchestrators separate from analyzers. | The user asks for an outcome; orchestration decides which internal capabilities are needed without exposing module choices. |
-| AD-010 | Avoid persistent application state in the first vertical slice. | Synchronous bounded requests do not require a database, and Railway's deployment filesystem should be treated as ephemeral. |
+| AD-010 | Persist operational runtime identity only; keep business processing stateless. | Railway Volume storage satisfies operational continuity without retaining repositories, logs, reports, or payment proofs. |
 | AD-011 | Add a queue and durable job store only after an official async contract is confirmed. | Polling and multi-request payment semantics are not defined clearly enough to invent. |
 | AD-012 | Use a reproducible container deployment once implementation begins. | A reviewed Dockerfile pins the runtime and system dependencies more explicitly than relying on ambient build detection. |
 
@@ -576,8 +576,10 @@ hold secrets and environment-specific configuration. A reviewed
 `railway.json` will define deployment policy, health-check path, and restart
 behavior.
 
-The initial release does not require a Railway volume. Repository workspaces
-are disposable, and deploy filesystems must be treated as ephemeral.
+Sprint 1 uses a Railway Volume mounted at `/data` for a small operational state
+file containing instance identity, first start time, last start time, and boot
+count. Repository workspaces remain disposable, and no user input, report,
+credential, or payment proof is stored there.
 
 ### 10.2 Deployment artifact
 
@@ -927,24 +929,17 @@ application.
 
 ## 17. Milestone gates
 
-### Milestone 1 may begin only after
+### Sprint 1 implementation status
 
-- this architecture is approved;
-- open decisions 1 through 5 have an explicit answer or approved temporary
-  constraint;
-- the canonical remote repository is confirmed;
-- no undocumented OKX.AI behavior is required by the selected design.
+- TypeScript pnpm workspace: complete.
+- Configuration validation: complete.
+- Structured logging and redaction: complete.
+- HTTP server and required routes: complete.
+- Planner and placeholder services: complete.
+- Official OKX x402 seller runtime wiring: complete and disabled by default.
+- Persistent operational runtime state: complete.
+- Automated tests and architecture checks: complete.
+- CI, Dockerfile, and Railway configuration: complete.
+- Security Audit and Root Cause Investigation business logic: not started.
 
-### Milestone 1 definition of done
-
-- TypeScript project scaffold only;
-- configuration validation;
-- structured logging;
-- HTTP server with health and readiness routes;
-- empty typed service interfaces with no audit business logic;
-- lint, typecheck, unit-test, and build commands;
-- CI workflow;
-- Docker and Railway configuration;
-- no production payment or analysis behavior.
-
-The project must stop for review again after Milestone 1.
+The project stops for review after Sprint 1.

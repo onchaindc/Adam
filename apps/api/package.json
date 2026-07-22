@@ -1,0 +1,33 @@
+{
+  "name": "@adam/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": "./dist/app.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "test": "node --test test/**/*.test.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@adam/contracts": "workspace:*",
+    "@okxweb3/x402-core": "0.1.0",
+    "@okxweb3/x402-evm": "0.2.1",
+    "@okxweb3/x402-express": "0.1.1",
+    "express": "5.2.1",
+    "pino": "10.3.1",
+    "pino-http": "11.0.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "^24.0.0",
+    "typescript": "7.0.2"
+  }
+}
