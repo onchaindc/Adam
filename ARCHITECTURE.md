@@ -65,25 +65,19 @@ The A2MCP endpoint is an HTTP service contract. The documentation does not
 require Adam to implement the Model Context Protocol server specification
 inside its runtime merely because the marketplace mode is named A2MCP.
 
-### 2.4 x402 payment flow
+### 2.4 Free and paid A2MCP modes
 
-The official payment documentation defines the HTTP seller flow:
+The official A2MCP documentation supports two endpoint modes:
 
-1. a client sends a request without valid payment;
-2. the seller responds with HTTP `402 Payment Required` and payment
-   requirements;
-3. the client signs or completes the payment and retries with the required
-   payment header;
-4. official seller middleware verifies the credential and coordinates
-   settlement through the configured Broker;
-5. the application handles the paid request and returns its result with the
-   required payment response metadata.
+- a free service endpoint that returns its result directly; and
+- an optional paid endpoint that uses x402.
 
-Adam should use the official maintained seller SDK or middleware available when
-Milestone 2 begins. It must not implement signature verification, settlement,
-or Broker behavior from scratch. In the current payment documentation, the
-Broker occupies the same architectural slot as an x402 facilitator for a
-one-time HTTP payment while supporting broader payment state when needed.
+x402 is not the A2MCP runtime. It is an optional monetization layer for a paid
+service. Adam's Sprint 1 endpoints use the free mode and should be registered
+with price `0`. No payment SDK, facilitator, Broker, settlement lifecycle, or
+payment credential belongs in the Sprint 1 runtime.
+
+Any future monetization requires a separate approved architecture decision.
 
 ### 2.5 A2A distinction
 
@@ -113,8 +107,7 @@ a separate architecture decision and explicit approval.
 
 - Present an extremely simple user-facing service.
 - Produce evidence-backed conclusions rather than generic advice.
-- Keep payment, transport, investigation, and reporting responsibilities
-  separate.
+- Keep transport, investigation, and reporting responsibilities separate.
 - Treat repositories and logs as hostile input.
 - Operate entirely in cloud infrastructure.
 - Scale from a single deployable service without forcing a premature
@@ -140,16 +133,16 @@ a separate architecture decision and explicit approval.
 | ID | Decision | Reason |
 | --- | --- | --- |
 | AD-001 | Build a modular monolith first. | It provides clear boundaries without distributed-system overhead. Modules can later become services if measured load requires it. |
-| AD-002 | Use TypeScript on the current supported Node.js LTS line, pinned at implementation time. | This follows the project rule, supports strong contracts, and aligns with official Node.js payment guidance. |
+| AD-002 | Use TypeScript on the current supported Node.js LTS line, pinned at implementation time. | This follows the project rule and supports strong contracts across transport and service boundaries. |
 | AD-003 | Host Adam as an independent HTTPS service on Railway. | The ASP endpoint must remain online without a developer computer, and Railway provides managed deployment, networking, variables, and health checks. |
-| AD-004 | Use the official HTTP seller integration. | Payment verification and settlement are security-critical protocol behavior and must not be reimplemented. |
+| AD-004 | Register Sprint 1 A2MCP services as free endpoints. | Official A2MCP supports price `0`; payment is optional and has not been approved for Adam. |
 | AD-005 | Keep A2MCP operations bounded and schema-driven. | The official documentation positions A2MCP as standardized API work, while Adam's broader mission can become open-ended. |
 | AD-006 | Perform static inspection only in the initial release. | Running attacker-controlled code would materially expand the threat model and infrastructure cost. |
 | AD-007 | Clone repositories into per-request ephemeral workspaces. | This prevents cross-request contamination and avoids retaining source code unnecessarily. |
 | AD-008 | Maintain a normalized evidence model before generating conclusions. | Findings must be traceable, deduplicated, ranked, and testable independently of presentation. |
 | AD-009 | Keep service orchestrators separate from analyzers. | The user asks for an outcome; orchestration decides which internal capabilities are needed without exposing module choices. |
-| AD-010 | Persist operational runtime identity only; keep business processing stateless. | Railway Volume storage satisfies operational continuity without retaining repositories, logs, reports, or payment proofs. |
-| AD-011 | Add a queue and durable job store only after an official async contract is confirmed. | Polling and multi-request payment semantics are not defined clearly enough to invent. |
+| AD-010 | Persist operational runtime identity only; keep business processing stateless. | Railway Volume storage satisfies operational continuity without retaining repositories, logs, or reports. |
+| AD-011 | Add a queue and durable job store only after an official async contract is confirmed. | Polling and asynchronous job semantics are not defined clearly enough to invent. |
 | AD-012 | Use a reproducible container deployment once implementation begins. | A reviewed Dockerfile pins the runtime and system dependencies more explicitly than relying on ambient build detection. |
 
 ## 5. System context
@@ -158,7 +151,6 @@ a separate architecture decision and explicit approval.
 flowchart TB
     User["User or consuming agent"]
     OKX["OKX.AI / OnchainOS"]
-    Broker["Configured payment Broker"]
     Adam["Adam ASP runtime on Railway"]
     GitHub["Public GitHub repository"]
     Logs["Inline user-supplied logs"]
@@ -166,7 +158,6 @@ flowchart TB
 
     User --> OKX
     OKX -->|"A2MCP HTTPS request"| Adam
-    Adam <-->|"challenge / verify / settle"| Broker
     Adam -->|"bounded read-only fetch"| GitHub
     Logs --> Adam
     Adam -->|"structured report"| OKX
@@ -175,8 +166,7 @@ flowchart TB
 
 ### 5.1 Trust boundaries
 
-1. **Marketplace boundary:** request identity and payment metadata arrive from
-   outside Adam.
+1. **Marketplace boundary:** request metadata arrives from outside Adam.
 2. **Public network boundary:** the repository host is untrusted even when the
    URL looks valid.
 3. **Content boundary:** source files, Git metadata, configuration, and logs can
@@ -191,7 +181,6 @@ flowchart TB
 ```mermaid
 flowchart TD
     Transport["HTTP transport and schema validation"]
-    Payments["x402 payment adapter"]
     SecurityService["Security Audit service"]
     RootCauseService["Root Cause service"]
     Investigation["Investigation orchestration"]
@@ -203,9 +192,8 @@ flowchart TD
     Report["Scoring and report assembly"]
     Platform["GitHub, telemetry, and storage adapters"]
 
-    Transport --> Payments
-    Payments --> SecurityService
-    Payments --> RootCauseService
+    Transport --> SecurityService
+    Transport --> RootCauseService
     SecurityService --> Investigation
     RootCauseService --> Investigation
     Investigation --> Acquisition
@@ -223,7 +211,7 @@ flowchart TD
 
 Responsibilities:
 
-- expose health and paid service routes;
+- expose health and service routes;
 - validate request shape and content type;
 - enforce body-size and timeout limits;
 - attach a request and correlation ID;
@@ -233,18 +221,18 @@ Responsibilities:
 
 It must not contain investigation logic.
 
-### 6.2 Payment adapter
+### 6.2 A2MCP registration boundary
+
+ASP identity and service registration are deployment concerns, not application
+middleware. Sprint 1 exposes normal HTTPS routes and registers them with price
+`0`.
 
 Responsibilities:
 
-- configure official x402 middleware;
-- map registered routes to exact prices and payment requirements;
-- expose required payment headers;
-- make settlement metadata available to request context;
-- log transaction identifiers without logging signatures or secrets;
-- provide contract tests against the official protocol behavior.
-
-It must not perform analysis or own product pricing decisions.
+- document the public endpoint and input method;
+- keep service names and route metadata versioned;
+- verify the registered endpoint returns structured JSON;
+- avoid adding payment middleware without explicit approval.
 
 ### 6.3 Service layer
 
@@ -275,7 +263,7 @@ The investigation core owns reusable engineering concepts:
 - remediation;
 - analysis limitation.
 
-It must not depend on HTTP, Railway, OKX.AI, or x402.
+It must not depend on HTTP, Railway, or OKX.AI registration tooling.
 
 ### 6.5 Repository acquisition
 
@@ -339,7 +327,7 @@ An analyzer:
 - receives normalized, read-only investigation input;
 - returns evidence and hypotheses, not final prose;
 - never calls another analyzer directly;
-- never knows about payment or HTTP.
+- never knows about marketplace registration or HTTP.
 
 The registry selects analyzers based on detected stack and service needs. The
 user never selects them manually.
@@ -483,17 +471,16 @@ configuration.
 1. Receive an HTTPS request.
 2. Assign a correlation ID and enforce transport limits.
 3. Validate the request shape before any expensive work.
-4. Apply the official x402 seller flow to paid routes.
-5. Validate repository scope and normalize the request.
-6. Create an isolated temporary workspace.
-7. Resolve and fetch the target immutable Git commit.
-8. Detect stack and select applicable analyzers.
-9. Collect and normalize evidence.
-10. Build findings or root-cause hypotheses.
-11. Assemble and validate the versioned report.
-12. Return the structured response and payment metadata.
-13. Delete temporary repository and log artifacts.
-14. Emit redacted metrics and structured operational logs.
+4. Validate repository scope and normalize the request.
+5. Create an isolated temporary workspace.
+6. Resolve and fetch the target immutable Git commit.
+7. Detect stack and select applicable analyzers.
+8. Collect and normalize evidence.
+9. Build findings or root-cause hypotheses.
+10. Assemble and validate the versioned report.
+11. Return the structured response.
+12. Delete temporary repository and log artifacts.
+13. Emit redacted metrics and structured operational logs.
 
 All cleanup must run on success, failure, timeout, and cancellation.
 
@@ -515,8 +502,7 @@ All cleanup must run on success, failure, timeout, and cancellation.
 
 ### 9.2 Secret and log controls
 
-- Never write raw payment signatures, private keys, access tokens, or complete
-  user logs to telemetry.
+- Never write private keys, access tokens, or complete user logs to telemetry.
 - Redact common credential forms before external model calls or logging.
 - Mark sensitive evidence so reports can summarize without reproducing a full
   secret.
@@ -542,8 +528,7 @@ Any model adapter must:
 
 - Enforce body-size, clone-size, file-count, and wall-clock limits.
 - Apply concurrency caps based on measured memory and CPU use.
-- Rate-limit unpaid probing separately from paid execution.
-- Reject duplicate payment replays according to official SDK behavior.
+- Rate-limit abusive or repeated requests.
 - Use idempotency keys if supported by the final service contract.
 - Return stable errors without exposing stack traces.
 
@@ -561,14 +546,12 @@ flowchart LR
     Temp["Ephemeral per-request workspace"]
     Provider["External model provider"]
     GitHub["GitHub"]
-    Broker["Payment Broker"]
 
     Internet --> Railway
     Railway --> App
     App --> Temp
     App --> GitHub
     App --> Provider
-    App --> Broker
 ```
 
 The process must listen on Railway's injected `PORT`. Railway variables will
@@ -579,7 +562,7 @@ behavior.
 Sprint 1 uses a Railway Volume mounted at `/data` for a small operational state
 file containing instance identity, first start time, last start time, and boot
 count. Repository workspaces remain disposable, and no user input, report,
-credential, or payment proof is stored there.
+or credential is stored there.
 
 ### 10.2 Deployment artifact
 
@@ -609,7 +592,6 @@ Expected configuration categories:
 - GitHub acquisition limits;
 - request and analysis limits;
 - model provider credentials and model selection;
-- payment network, asset, payee, Broker, and route pricing;
 - telemetry exporters;
 - feature flags for explicitly approved analyzers.
 
@@ -624,13 +606,11 @@ Structured logs:
 - duration and resource-limit outcomes;
 - analyzer counts and statuses;
 - report status;
-- redacted payment transaction identifier;
 - error code and retryability.
 
 Metrics:
 
 - request count by service and status;
-- paid request success rate;
 - request and stage latency;
 - repository size distribution;
 - analyzer failure rate;
@@ -664,14 +644,14 @@ Trigger conditions:
 
 Potential topology:
 
-- public API and payment service;
+- public API service;
 - private investigation workers;
 - durable queue;
 - PostgreSQL job metadata;
 - object storage for encrypted, time-limited artifacts.
 
-This stage requires an approved A2MCP async service contract and payment failure
-policy before implementation.
+This stage requires an approved A2MCP asynchronous service contract before
+implementation.
 
 ### Stage 3: specialized worker pools
 
@@ -687,7 +667,6 @@ Errors will be stable, typed, and separated into:
 - unsupported repository or content;
 - repository unavailable;
 - configured limit exceeded;
-- payment required or payment rejected;
 - analysis incomplete;
 - upstream dependency unavailable;
 - internal failure.
@@ -700,11 +679,6 @@ Each error response should contain:
 - request ID;
 - retryability;
 - sanitized details when useful.
-
-Payment-settled requests that fail during repository fetch or analysis require a
-documented failure and refund policy. The reviewed official documentation does
-not define that product policy for Adam. This must be resolved before charging
-real users.
 
 ## 13. Testing strategy
 
@@ -727,15 +701,10 @@ real users.
 - analyzer orchestration;
 - model adapter structured-output validation;
 - Railway-style configuration startup;
-- payment middleware with the official test or sandbox flow.
 
 ### Contract tests
 
 - service request and response schemas;
-- initial HTTP `402` response;
-- required payment headers;
-- paid replay behavior;
-- response payment metadata;
 - OKX.AI service registration input shape.
 
 ### Security tests
@@ -748,15 +717,13 @@ real users.
 - prompt injection in source and logs;
 - secret redaction;
 - timeout and cancellation cleanup;
-- payment replay and malformed signature handling.
 
 ### End-to-end tests
 
 - register or configure a test service;
-- invoke it as a client without payment and observe `402`;
-- complete the official test payment flow;
+- invoke the free A2MCP endpoint;
 - receive a schema-valid Adam report;
-- verify settlement metadata and operational logs;
+- verify operational logs;
 - repeat against the deployed Railway revision.
 
 ## 14. Recommended repository structure
@@ -794,8 +761,6 @@ real users.
 |   |   |-- repository/
 |   |   |-- stack/
 |   |   `-- workspace/
-|   |-- payments/
-|   |   `-- x402/
 |   |-- platform/
 |   |   |-- github/
 |   |   |-- models/
@@ -835,12 +800,10 @@ real users.
 - `services/` owns user outcomes, not low-level capabilities.
 - `analyzers/` contains independent evidence producers.
 - `investigation/` contains reusable domain concepts and orchestration support.
-- `payments/` isolates protocol-specific settlement concerns.
 - `transport/` isolates HTTP and serialization.
 - `platform/` contains replaceable external adapters.
 - `reporting/` centralizes deterministic scoring and report assembly.
-- `test/contract/` protects public and payment interfaces from accidental
-  change.
+- `test/contract/` protects public service interfaces from accidental change.
 - `docs/adr/` records important future decisions without rewriting history.
 - `docs/operations/` keeps deployment and incident knowledge versioned with the
   code.
@@ -859,15 +822,14 @@ while official guidance positions A2MCP as a standardized API mode.
 standardized report schemas, and explicit time limits. Seek official
 confirmation before adding asynchronous jobs.
 
-### 15.2 Payment can settle before analysis succeeds
+### 15.2 Monetization can distort the initial service design
 
-**Flaw:** Repository access, model calls, or analysis may fail after payment
-verification.
+**Flaw:** Treating optional x402 monetization as required A2MCP infrastructure
+adds credentials, settlement failure modes, and SDK coupling before the service
+contract is proven.
 
-**Improvement:** Perform all safe, cheap validation before settlement where the
-official middleware permits; define retry, partial-result, and refund policy;
-add idempotency; and do not charge real users until failure semantics are
-tested.
+**Improvement:** Keep Sprint 1 free and payment-free. Revisit monetization only
+through a separate architecture decision after the service behavior is stable.
 
 ### 15.3 Static-only analysis limits certainty
 
@@ -916,15 +878,13 @@ application.
 
 1. Confirm the bounded A2MCP interpretation for the two investigation services.
 2. Confirm public GitHub-only and static-inspection-only MVP scope.
-3. Confirm whether a single paid service should expose both outcomes or whether
-   they should be registered and priced separately.
-4. Confirm the payment network, asset, payee account, Broker, and price.
-5. Confirm the model provider and data-processing policy.
-6. Confirm request limits after a benchmark spike.
-7. Confirm refund and retry policy for paid requests that cannot complete.
-8. Confirm the intended public GitHub repository and configure `origin`.
-9. Confirm the open-source license.
-10. Confirm the official hackathon submission deadline in the participant
+3. Confirm whether the two outcomes should be registered as separate free
+   services.
+4. Confirm the model provider and data-processing policy.
+5. Confirm request limits after a benchmark spike.
+6. Confirm the intended public GitHub repository and configure `origin`.
+7. Confirm the open-source license.
+8. Confirm the official hackathon submission deadline in the participant
     dashboard.
 
 ## 17. Milestone gates
@@ -936,7 +896,7 @@ application.
 - Structured logging and redaction: complete.
 - HTTP server and required routes: complete.
 - Planner and placeholder services: complete.
-- Official OKX x402 seller runtime wiring: complete and disabled by default.
+- Free A2MCP HTTP service boundary: complete.
 - Persistent operational runtime state: complete.
 - Automated tests and architecture checks: complete.
 - CI, Dockerfile, and Railway configuration: complete.

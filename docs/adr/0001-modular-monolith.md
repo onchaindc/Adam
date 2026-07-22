@@ -10,8 +10,8 @@ boundaries and one shared contracts package.
 
 ## Rationale
 
-Sprint 1 needs reliable deployment, payment runtime integration, request
-routing, and operational state. Separate network services would add failure
+Sprint 1 needs reliable deployment, request routing, and operational state.
+Separate network services would add failure
 modes without providing a current scaling benefit. The workspace preserves
 clear package ownership while allowing measured workloads to be extracted
 later.
@@ -19,6 +19,6 @@ later.
 ## Consequences
 
 - The API is one Railway service.
-- The planner cannot import service execution, payment, or transport modules.
-- Services cannot import payment or transport modules.
+- The planner cannot import service execution or transport modules.
+- Services cannot import transport modules.
 - Future extraction must be justified by observed isolation or scaling needs.

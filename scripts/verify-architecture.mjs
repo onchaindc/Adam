@@ -13,16 +13,16 @@ for (const file of sourceFiles) {
 
   if (
     displayPath.includes("/planner/") &&
-    /from\s+["'][^"']*(services|payments|transport)\//.test(source)
+    /from\s+["'][^"']*(services|transport)\//.test(source)
   ) {
     violations.push(`${displayPath}: planner imports an execution layer`);
   }
 
   if (
     displayPath.includes("/services/") &&
-    /from\s+["'][^"']*(transport|payments)\//.test(source)
+    /from\s+["'][^"']*transport\//.test(source)
   ) {
-    violations.push(`${displayPath}: service imports transport or payment code`);
+    violations.push(`${displayPath}: service imports transport code`);
   }
 }
 

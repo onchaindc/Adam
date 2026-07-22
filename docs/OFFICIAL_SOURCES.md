@@ -36,7 +36,9 @@ distinction.
 - [A2MCP](https://web3.okx.com/onchainos/dev-docs/okxai/howtomcp)
 
 Used to establish A2MCP as the standardized API-oriented service mode and the
-expected public endpoint plus x402 payment behavior.
+expected public HTTP endpoint. The official flow supports either a free
+endpoint that returns HTTP 200 directly or an optional x402-protected paid
+endpoint. Adam uses the free mode in Sprint 1.
 
 ### A2A
 
@@ -46,22 +48,24 @@ Used only to understand the official distinction between customized,
 multi-step task work and standardized A2MCP services. Adam is not implementing
 an A2A runtime in the approved Milestone 0 proposal.
 
-## x402 payments
+## Optional x402 payments
+
+These sources are retained only for a possible future monetization decision.
+They do not define the required A2MCP runtime and no payment SDK is integrated
+in Sprint 1.
 
 ### SDK overview
 
 - [Payment SDK Overview](https://web3.okx.com/onchainos/dev-docs/payments/sdk-overview)
 
-Used to distinguish Agent Seller Skills from HTTP Seller and Buyer SDKs. Adam is
-designed as an HTTP seller because it exposes a public paid service endpoint.
+Used to understand the optional paid HTTP seller model.
 
 ### HTTP seller integration
 
 - [Sell DApp/MCP services](https://web3.okx.com/onchainos/dev-docs/payments/service-seller)
 
-Used to establish the seller-side `402`, payment verification, settlement, and
-paid replay flow. Adam must use official middleware rather than reimplementing
-the protocol.
+Used to establish the seller-side flow only if a future paid service is
+explicitly approved.
 
 ### Broker and protocol concepts
 
@@ -142,7 +146,7 @@ each implementation milestone:
 
 1. Before ASP registration, recheck identity, role, service metadata, and CLI
    commands.
-2. Before payment integration, recheck package names, supported Node.js
+2. Before any separately approved payment integration, recheck package names, supported Node.js
    versions, Broker configuration, headers, networks, and assets.
 3. Before Railway deployment, recheck health-check, networking, volume, and
    configuration behavior.

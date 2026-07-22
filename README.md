@@ -15,7 +15,7 @@ Sprint 0 is approved. The repository now contains the production foundation:
 
 - a Node.js and TypeScript pnpm workspace;
 - a modular Express API;
-- the official OKX x402 HTTP seller runtime integration;
+- a free A2MCP-compatible HTTP service boundary;
 - a request planner and placeholder services;
 - structured logging and persistent operational runtime state;
 - Docker, Railway, and GitHub Actions configuration.
@@ -73,15 +73,13 @@ Given a public GitHub repository and deployment, runtime, or CI logs, Adam will:
 ```mermaid
 flowchart LR
     Client["OnchainOS / OKX.AI client"]
-    Payment["Official x402 middleware"]
     API["Adam HTTP boundary"]
     Orchestrator["Investigation orchestrator"]
     Workspace["Isolated ephemeral workspace"]
     Analyzers["Specialized analyzers"]
     Evidence["Evidence and report pipeline"]
 
-    Client -->|"A2MCP request"| Payment
-    Payment -->|"verified paid request"| API
+    Client -->|"A2MCP HTTP request"| API
     API --> Orchestrator
     Orchestrator --> Workspace
     Orchestrator --> Analyzers
@@ -92,8 +90,8 @@ flowchart LR
 ```
 
 Adam will run as an independently hosted HTTPS service. OKX.AI provides
-identity, discovery, service registration, and payment-aware invocation; Adam
-owns the investigation runtime and its operational security.
+identity, discovery, and service registration; Adam owns the investigation
+runtime and its operational security.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the complete proposed design and
 [docs/OFFICIAL_SOURCES.md](docs/OFFICIAL_SOURCES.md) for the reviewed official
@@ -163,18 +161,12 @@ Run all repository checks:
 pnpm verify
 ```
 
-## A2MCP runtime
+## A2MCP service boundary
 
-Adam uses the official OKX TypeScript HTTP seller packages:
-
-- `@okxweb3/x402-core`
-- `@okxweb3/x402-evm`
-- `@okxweb3/x402-express`
-
-Payments are disabled locally by default. When `PAYMENTS_ENABLED=true`, both
-POST routes are protected by the official fixed-price x402 flow on X Layer
-(`eip155:196`). The runtime validates required seller credentials at startup
-and initializes the resource server after the HTTP listener starts.
+Adam exposes ordinary HTTPS endpoints with structured JSON input and output.
+The official A2MCP registration flow supports free services, so Sprint 1 has no
+payment SDK or settlement runtime. Adam should be registered with price `0`
+until monetization is explicitly designed and approved.
 
 ## Deploy to Railway
 
@@ -182,22 +174,20 @@ and initializes the resource server after the HTTP listener starts.
 2. Attach a Railway Volume mounted at `/data`.
 3. Set `STATE_FILE=/data/runtime-state.json`.
 4. Add the variables documented in `.env.example`.
-5. Keep `PAYMENTS_ENABLED=false` until valid OKX seller credentials and prices
-   are configured.
-6. Deploy. Railway builds the root `Dockerfile` and checks `GET /health`.
+5. Deploy. Railway builds the root `Dockerfile` and checks `GET /health`.
 
 See [docs/operations/deployment.md](docs/operations/deployment.md) for the full
-deployment and payment variable list.
+deployment variable list.
 
 ## Milestone plan
 
 1. **Milestone 0:** approve architecture, service boundaries, deployment model,
    and official integration assumptions.
 2. **Milestone 1:** complete, pending approval. Typed service foundation,
-   official seller runtime, persistent operational state, health routes,
+   free A2MCP HTTP boundary, persistent operational state, health routes,
    placeholder services, logging, CI, Docker, and Railway configuration.
-3. **Milestone 2:** activate production payment configuration and contract-test
-   the live x402 seller flow.
+3. **Milestone 2:** requires separate approval and must not assume payment
+   integration.
 4. **Milestone 3:** deliver one bounded Security Audit vertical slice.
 5. **Milestone 4:** deliver one bounded Root Cause Investigation vertical slice.
 6. **Milestone 5:** harden isolation, observability, reliability, and Railway

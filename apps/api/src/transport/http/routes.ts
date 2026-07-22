@@ -3,12 +3,10 @@ import { Router as createRouter } from "express";
 
 import type { RuntimeState } from "../../platform/state/runtime-state.js";
 import { planRequest } from "../../planner/planner.js";
-import type { PaymentRuntime } from "../../payments/x402/runtime.js";
 import type { ServiceDispatcher } from "../../services/service-dispatcher.js";
 
 export interface RouteDependencies {
   readonly dispatcher: ServiceDispatcher;
-  readonly paymentRuntime: PaymentRuntime;
   readonly runtimeState: RuntimeState;
 }
 
@@ -32,10 +30,6 @@ export function createRoutes(dependencies: RouteDependencies): Router {
       runtime: {
         instanceId: dependencies.runtimeState.instanceId,
         bootCount: dependencies.runtimeState.bootCount,
-      },
-      payments: {
-        enabled: dependencies.paymentRuntime.enabled,
-        ready: dependencies.paymentRuntime.isReady(),
       },
     });
   });

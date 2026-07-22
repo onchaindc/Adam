@@ -18,21 +18,10 @@ describe("HTTP routes", () => {
         };
       },
     };
-    const paymentRuntime = {
-      enabled: false,
-      middleware(_request, _response, next) {
-        next();
-      },
-      async initialize() {},
-      isReady() {
-        return true;
-      },
-    };
     const app = createApp({
       dispatcher,
       environment: loadEnvironment({ NODE_ENV: "test" }),
       logger: pino({ enabled: false }),
-      paymentRuntime,
       runtimeState: {
         instanceId: "test-instance",
         bootCount: 1,
@@ -65,7 +54,6 @@ describe("HTTP routes", () => {
           status: "ok",
           requestId: "ignored",
           runtime: { instanceId: "test-instance", bootCount: 1 },
-          payments: { enabled: false, ready: true },
         },
       );
       assert.equal(audit.status, 501);

@@ -10,14 +10,7 @@ export function createLogger(environment: Environment): Logger {
       environment: environment.NODE_ENV,
     },
     redact: {
-      paths: [
-        "req.headers.authorization",
-        "req.headers.payment-signature",
-        "req.headers.x-payment",
-        "OKX_API_KEY",
-        "OKX_SECRET_KEY",
-        "OKX_PASSPHRASE",
-      ],
+      paths: ["req.headers.authorization"],
       censor: "[REDACTED]",
     },
     timestamp: pino.stdTimeFunctions.isoTime,
