@@ -31,7 +31,11 @@ ENV HOST=0.0.0.0
 ENV PORT=4000
 ENV STATE_FILE=/data/runtime-state.json
 WORKDIR /app
-RUN groupadd --system adam && useradd --system --gid adam --home /app adam \
+RUN apt-get update \
+  && apt-get install --yes --no-install-recommends ca-certificates git \
+  && rm -rf /var/lib/apt/lists/* \
+  && groupadd --system adam \
+  && useradd --system --gid adam --home /app adam \
   && mkdir -p /data \
   && chown -R adam:adam /app /data
 COPY --from=production-dependencies --chown=adam:adam /app/node_modules ./node_modules
