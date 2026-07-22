@@ -15,5 +15,9 @@ export function planRequest(request: PlannerRequest): PlannerDecision {
 
   return {
     service: request.requestedService,
+    prerequisites:
+      request.requestedService === "repository-intelligence"
+        ? []
+        : ["repository-intelligence"],
   };
 }

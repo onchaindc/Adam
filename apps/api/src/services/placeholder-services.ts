@@ -1,17 +1,16 @@
 import type {
-  PlaceholderServiceRequest,
   PlaceholderServiceResponse,
+  ServiceRequest,
+  ServiceResponse,
 } from "@adam/contracts";
 
-export interface PlaceholderService {
-  execute(
-    request: PlaceholderServiceRequest,
-  ): Promise<PlaceholderServiceResponse>;
+export interface AdamService {
+  execute(request: ServiceRequest): Promise<ServiceResponse>;
 }
 
-export class SecurityAuditPlaceholderService implements PlaceholderService {
+export class SecurityAuditPlaceholderService implements AdamService {
   public async execute(
-    request: PlaceholderServiceRequest,
+    request: ServiceRequest,
   ): Promise<PlaceholderServiceResponse> {
     return {
       service: "security-audit",
@@ -23,10 +22,10 @@ export class SecurityAuditPlaceholderService implements PlaceholderService {
 }
 
 export class RootCauseInvestigationPlaceholderService
-  implements PlaceholderService
+  implements AdamService
 {
   public async execute(
-    request: PlaceholderServiceRequest,
+    request: ServiceRequest,
   ): Promise<PlaceholderServiceResponse> {
     return {
       service: "root-cause-investigation",

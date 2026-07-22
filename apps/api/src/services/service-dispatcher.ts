@@ -1,27 +1,27 @@
 import type {
-  PlaceholderServiceRequest,
-  PlaceholderServiceResponse,
+  ServiceRequest,
+  ServiceResponse,
   ServiceKind,
 } from "@adam/contracts";
 
-import type { PlaceholderService } from "./placeholder-services.js";
+import type { AdamService } from "./placeholder-services.js";
 
 export interface ServiceDispatcher {
   dispatch(
     service: ServiceKind,
-    request: PlaceholderServiceRequest,
-  ): Promise<PlaceholderServiceResponse>;
+    request: ServiceRequest,
+  ): Promise<ServiceResponse>;
 }
 
 export class DefaultServiceDispatcher implements ServiceDispatcher {
   public constructor(
-    private readonly services: Readonly<Record<ServiceKind, PlaceholderService>>,
+    private readonly services: Readonly<Record<ServiceKind, AdamService>>,
   ) {}
 
   public dispatch(
     service: ServiceKind,
-    request: PlaceholderServiceRequest,
-  ): Promise<PlaceholderServiceResponse> {
+    request: ServiceRequest,
+  ): Promise<ServiceResponse> {
     return this.services[service].execute(request);
   }
 }

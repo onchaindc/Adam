@@ -10,6 +10,39 @@ describe("HTTP routes", () => {
   it("serves health and placeholder service responses", async () => {
     const dispatcher = {
       async dispatch(service, request) {
+        if (service === "repository-intelligence") {
+          return {
+            service,
+            status: "completed",
+            requestId: request.requestId,
+            summary: {
+              repository: {
+                name: "Adam",
+                owner: "onchaindc",
+                url: "https://github.com/onchaindc/Adam",
+                defaultBranch: "main",
+                commitSha: "abc123",
+              },
+              languages: [],
+              frameworks: [],
+              packageManager: null,
+              structure: {
+                topLevelEntries: [],
+                directories: [],
+                fileTree: [],
+              },
+              docker: { detected: false, files: [] },
+              ciCd: { detected: false, files: [] },
+              smartContracts: { detected: false, solidityFiles: [] },
+              environmentFiles: [],
+              configurationFiles: [],
+              totalFilesScanned: 0,
+              ignoredDirectories: [],
+              limitations: [],
+            },
+          };
+        }
+
         return {
           service,
           status: "not-implemented",
@@ -43,6 +76,24 @@ describe("HTTP routes", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ repositoryUrl: "placeholder" }),
       });
+      const repositorySummary = await fetch(
+        `${baseUrl}/repository/summary`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            repositoryUrl: "https://github.com/onchaindc/Adam",
+          }),
+        },
+      );
+      const invalidRepositorySummary = await fetch(
+        `${baseUrl}/repository/summary`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({}),
+        },
+      );
 
       assert.equal(health.status, 200);
       assert.deepEqual(
@@ -69,6 +120,9 @@ describe("HTTP routes", () => {
           message: "placeholder",
         },
       );
+      assert.equal(repositorySummary.status, 200);
+      assert.equal((await repositorySummary.json()).status, "completed");
+      assert.equal(invalidRepositorySummary.status, 400);
     } finally {
       await new Promise((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));

@@ -9,19 +9,23 @@ tool, a generic code generator, or a hackathon judging agent.
 
 ## Project status
 
-**Sprint 1: Foundation Implementation**
+**Sprint 2: Repository Intelligence**
 
-Sprint 0 is approved. The repository now contains the production foundation:
+Sprint 1 is approved. The repository now contains:
 
 - a Node.js and TypeScript pnpm workspace;
 - a modular Express API;
 - a free A2MCP-compatible HTTP service boundary;
-- a request planner and placeholder services;
+- a request planner with repository-intelligence prerequisites;
+- bounded public GitHub repository acquisition through Git;
+- a reusable internal Repository Model;
+- deterministic language, framework, package-manager, Docker, CI/CD, Solidity,
+  environment-file, and configuration-file detection;
 - structured logging and persistent operational runtime state;
 - Docker, Railway, and GitHub Actions configuration.
 
-Security analysis, root cause reasoning, repository ingestion, AI reasoning,
-and report generation remain intentionally unimplemented.
+Vulnerability detection, root cause reasoning, AI reasoning, and report
+generation remain intentionally unimplemented.
 
 Last documentation review: **July 22, 2026**
 
@@ -74,18 +78,17 @@ Given a public GitHub repository and deployment, runtime, or CI logs, Adam will:
 flowchart LR
     Client["OnchainOS / OKX.AI client"]
     API["Adam HTTP boundary"]
-    Orchestrator["Investigation orchestrator"]
+    Planner["Internal planner"]
     Workspace["Isolated ephemeral workspace"]
-    Analyzers["Specialized analyzers"]
-    Evidence["Evidence and report pipeline"]
+    RepositoryModel["Repository Model"]
+    Stack["Deterministic stack detection"]
 
     Client -->|"A2MCP HTTP request"| API
-    API --> Orchestrator
-    Orchestrator --> Workspace
-    Orchestrator --> Analyzers
-    Workspace --> Analyzers
-    Analyzers --> Evidence
-    Evidence --> API
+    API --> Planner
+    Planner --> Workspace
+    Workspace --> RepositoryModel
+    RepositoryModel --> Stack
+    Stack --> API
     API -->|"structured result"| Client
 ```
 
@@ -126,7 +129,8 @@ documentation and known ambiguities.
 ```
 
 Directories are introduced only when they contain working code or active
-documentation. Sprint 2+ analyzer and ingestion directories do not exist yet.
+documentation. Sprint 3 analyzer, AI, root-cause, and reporting directories do
+not exist yet.
 
 ## Run locally
 
@@ -148,11 +152,21 @@ The API listens on `http://localhost:4000` by default.
 ```text
 GET  /
 GET  /health
+POST /repository/summary
 POST /audit
 POST /investigate
 ```
 
-The two POST routes return HTTP 501 placeholder JSON until their approved
+`POST /repository/summary` accepts:
+
+```json
+{
+  "repositoryUrl": "https://github.com/onchaindc/Adam"
+}
+```
+
+It returns a structured repository summary. `/audit` and `/investigate`
+continue to return HTTP 501 placeholder JSON until their approved
 implementation sprints.
 
 Run all repository checks:
@@ -183,11 +197,11 @@ deployment variable list.
 
 1. **Milestone 0:** approve architecture, service boundaries, deployment model,
    and official integration assumptions.
-2. **Milestone 1:** complete, pending approval. Typed service foundation,
+2. **Milestone 1:** complete and approved. Typed service foundation,
    free A2MCP HTTP boundary, persistent operational state, health routes,
    placeholder services, logging, CI, Docker, and Railway configuration.
-3. **Milestone 2:** requires separate approval and must not assume payment
-   integration.
+3. **Milestone 2:** repository intelligence implementation. Public GitHub
+   acquisition, Repository Model, file-tree scanning, and stack detection.
 4. **Milestone 3:** deliver one bounded Security Audit vertical slice.
 5. **Milestone 4:** deliver one bounded Root Cause Investigation vertical slice.
 6. **Milestone 5:** harden isolation, observability, reliability, and Railway
@@ -201,6 +215,8 @@ Each milestone requires review before the next milestone begins.
 - The first release supports public GitHub repositories only.
 - Adam will not execute repository scripts, package managers, builds, tests, or
   smart contracts by default.
+- Repository acquisition is shallow, non-interactive, temporary, and bounded by
+  configurable clone-time, file-count, and directory-depth limits.
 - Private repository authentication, arbitrary log URLs, asynchronous jobs, and
   A2A task handling are outside the initial approved scope.
 - Exact request limits, final pricing, and production service metadata remain

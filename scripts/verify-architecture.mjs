@@ -26,17 +26,17 @@ for (const file of sourceFiles) {
   }
 }
 
-const forbiddenSprintOnePaths = [
+const forbiddenSprintTwoPaths = [
   "apps/api/src/analyzers",
-  "apps/api/src/investigation/repository",
-  "apps/api/src/platform/github",
+  "apps/api/src/investigation/root-cause",
+  "apps/api/src/platform/models",
   "apps/api/src/reporting",
 ];
 
-for (const path of forbiddenSprintOnePaths) {
+for (const path of forbiddenSprintTwoPaths) {
   try {
     await readdir(new URL(`../${path}/`, import.meta.url));
-    violations.push(`${path}: Sprint 2+ module exists during Sprint 1`);
+    violations.push(`${path}: Sprint 3+ module exists during Sprint 2`);
   } catch (error) {
     if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") {
       throw error;

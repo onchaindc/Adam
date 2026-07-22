@@ -267,13 +267,12 @@ It must not depend on HTTP, Railway, or OKX.AI registration tooling.
 
 ### 6.5 Repository acquisition
 
-Initial behavior:
+Sprint 2 behavior:
 
 - accept HTTPS URLs for public GitHub repositories only;
 - normalize owner and repository names;
-- optionally accept an explicit branch, tag, or commit reference;
 - resolve and record the immutable commit SHA used for analysis;
-- use shallow, bounded fetches where possible;
+- use a shallow, single-branch, no-tags Git clone;
 - disable credential prompts;
 - reject unsupported submodules and Git LFS requirements initially;
 - clean the workspace after the request.
@@ -304,6 +303,10 @@ Detection output must include:
 - limitations and conflicts.
 
 No single filename should be treated as conclusive when evidence conflicts.
+
+Sprint 2 implements deterministic detection only. It does not install
+dependencies, execute repository code, invoke a model, identify
+vulnerabilities, or generate investigation conclusions.
 
 ### 6.8 Analyzer registry
 
@@ -899,6 +902,20 @@ application.
 - Free A2MCP HTTP service boundary: complete.
 - Persistent operational runtime state: complete.
 - Automated tests and architecture checks: complete.
+
+### Sprint 2 implementation status
+
+- Public GitHub HTTPS URL normalization: complete.
+- Shallow Git acquisition and immutable commit capture: complete.
+- Ephemeral workspace cleanup: complete.
+- Ignored generated-directory enforcement: complete.
+- Internal Repository Model: complete.
+- Language, framework, and package-manager detection: complete.
+- Docker, CI/CD, Solidity, environment, and configuration detection: complete.
+- Structured repository summary endpoint: complete.
+- Planner repository-intelligence prerequisite: complete.
+- Vulnerability detection, AI reasoning, reporting, and root cause analysis:
+  intentionally not implemented.
 - CI, Dockerfile, and Railway configuration: complete.
 - Security Audit and Root Cause Investigation business logic: not started.
 
