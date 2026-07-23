@@ -32,7 +32,7 @@ ENV PORT=4000
 ENV STATE_FILE=/data/runtime-state.json
 WORKDIR /app
 RUN apt-get update \
-  && apt-get install --yes --no-install-recommends ca-certificates git \
+  && apt-get install --yes --no-install-recommends ca-certificates git gosu \
   && rm -rf /var/lib/apt/lists/* \
   && groupadd --system adam \
   && useradd --system --gid adam --home /app adam \
@@ -45,6 +45,8 @@ COPY --from=build --chown=adam:adam /app/packages/contracts/dist ./packages/cont
 COPY --chown=adam:adam package.json ./
 COPY --chown=adam:adam apps/api/package.json apps/api/package.json
 COPY --chown=adam:adam packages/contracts/package.json packages/contracts/package.json
-USER adam
+COPY docker-entrypoint.sh /usr/local/bin/adam-entrypoint
+RUN chmod 755 /usr/local/bin/adam-entrypoint
 EXPOSE 4000
+ENTRYPOINT ["adam-entrypoint"]
 CMD ["node", "apps/api/dist/server.js"]
