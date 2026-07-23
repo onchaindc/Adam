@@ -29,6 +29,18 @@ const environmentSchema = z
       .min(1)
       .max(100)
       .default(25),
+    REPOSITORY_MAX_FILE_BYTES: z.coerce
+      .number()
+      .int()
+      .min(1_024)
+      .max(5_000_000)
+      .default(512_000),
+    REPOSITORY_MAX_TOTAL_SOURCE_BYTES: z.coerce
+      .number()
+      .int()
+      .min(1_024)
+      .max(100_000_000)
+      .default(10_000_000),
   });
 
 export type Environment = z.infer<typeof environmentSchema>;

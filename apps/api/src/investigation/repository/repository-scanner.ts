@@ -31,10 +31,45 @@ const manifestFilenames = new Set([
   "go.mod",
 ]);
 const MAX_MANIFEST_BYTES = 1_000_000;
+const inspectableExtensions = new Set([
+  ".c",
+  ".cjs",
+  ".cpp",
+  ".cs",
+  ".css",
+  ".go",
+  ".h",
+  ".hpp",
+  ".html",
+  ".java",
+  ".js",
+  ".json",
+  ".jsx",
+  ".kt",
+  ".md",
+  ".mjs",
+  ".php",
+  ".properties",
+  ".py",
+  ".rb",
+  ".rs",
+  ".sh",
+  ".sol",
+  ".swift",
+  ".toml",
+  ".ts",
+  ".tsx",
+  ".txt",
+  ".vue",
+  ".yaml",
+  ".yml",
+]);
 
 export interface RepositoryScannerOptions {
   readonly maxFiles: number;
   readonly maxDepth: number;
+  readonly maxFileBytes: number;
+  readonly maxTotalSourceBytes: number;
 }
 
 export class RepositoryScanner {
@@ -47,6 +82,9 @@ export class RepositoryScanner {
     const files: RepositoryFile[] = [];
     const directories: string[] = [];
     const manifestContents: Record<string, string> = {};
+    let totalSourceBytes = 0;
+    let oversizedTextFiles = 0;
+    let sourceBudgetSkippedFiles = 0;
     const topLevelEntries = (await readdir(rootDirectory))
       .filter((entry) => !ignoredDirectories.has(entry))
       .sort();
@@ -90,10 +128,31 @@ export class RepositoryScanner {
         }
 
         const stats = await lstat(absolutePath);
+        const extension = extname(entry.name).toLowerCase();
+        let content: string | null = null;
+
+        if (stats.isFile() && isInspectableText(entry.name, extension)) {
+          if (stats.size > this.options.maxFileBytes) {
+            oversizedTextFiles += 1;
+          } else if (
+            totalSourceBytes + stats.size >
+            this.options.maxTotalSourceBytes
+          ) {
+            sourceBudgetSkippedFiles += 1;
+          } else {
+            const buffer = await readFile(absolutePath);
+            if (!buffer.includes(0)) {
+              content = buffer.toString("utf8");
+              totalSourceBytes += stats.size;
+            }
+          }
+        }
+
         files.push({
           path: relativePath,
-          extension: extname(entry.name).toLowerCase(),
+          extension,
           sizeBytes: stats.size,
+          content,
         });
 
         if (files.length > this.options.maxFiles) {
@@ -108,12 +167,24 @@ export class RepositoryScanner {
           stats.size <= MAX_MANIFEST_BYTES &&
           manifestFilenames.has(entry.name.toLowerCase())
         ) {
-          manifestContents[relativePath] = await readFile(absolutePath, "utf8");
+          manifestContents[relativePath] =
+            content ?? (await readFile(absolutePath, "utf8"));
         }
       }
     }
 
     const stack = detectStack(files, manifestContents);
+    const analysisLimitations = [...stack.limitations];
+    if (oversizedTextFiles > 0) {
+      analysisLimitations.push(
+        `${oversizedTextFiles} text files exceeded the per-file inspection limit.`,
+      );
+    }
+    if (sourceBudgetSkippedFiles > 0) {
+      analysisLimitations.push(
+        `${sourceBudgetSkippedFiles} text files exceeded the total source inspection budget.`,
+      );
+    }
     const fileTree = files.map((file) => file.path);
     const dockerFiles = fileTree.filter(isDockerFile);
     const ciCdFiles = fileTree.filter(isCiCdFile);
@@ -148,7 +219,7 @@ export class RepositoryScanner {
       configurationFiles,
       totalFilesScanned: files.length,
       ignoredDirectories: IGNORED_REPOSITORY_DIRECTORIES,
-      limitations: stack.limitations,
+      limitations: analysisLimitations,
     };
 
     return {
@@ -158,9 +229,21 @@ export class RepositoryScanner {
       directories,
       topLevelEntries,
       manifestContents,
+      analysisLimitations,
       summary,
     };
   }
+}
+
+function isInspectableText(filename: string, extension: string): boolean {
+  const lowerFilename = filename.toLowerCase();
+  return (
+    inspectableExtensions.has(extension) ||
+    lowerFilename === "dockerfile" ||
+    lowerFilename === "jenkinsfile" ||
+    lowerFilename.startsWith(".env") ||
+    lowerFilename.endsWith("rc")
+  );
 }
 
 function normalizePath(path: string): string {

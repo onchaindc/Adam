@@ -328,7 +328,7 @@ An analyzer:
 
 - declares the stacks and evidence types it supports;
 - receives normalized, read-only investigation input;
-- returns evidence and hypotheses, not final prose;
+- returns deterministic finding candidates, not final prose;
 - never calls another analyzer directly;
 - never knows about marketplace registration or HTTP.
 
@@ -917,6 +917,21 @@ application.
 - Vulnerability detection, AI reasoning, reporting, and root cause analysis:
   intentionally not implemented.
 - CI, Dockerfile, and Railway configuration: complete.
-- Security Audit and Root Cause Investigation business logic: not started.
 
-The project stops for review after Sprint 1.
+### Sprint 3 implementation status
+
+- Bounded source-text extension of the Repository Model: complete.
+- Secrets Scanner: complete.
+- Dependency Inspector with offline risky-package policies: complete.
+- Authentication & Authorization Inspector: complete.
+- Configuration Inspector: complete.
+- Static Security Pattern Inspector: complete.
+- Conditional Solidity Smart Contract Inspector: complete.
+- Deterministic finding IDs, severity, file/line, evidence, and confidence:
+  complete.
+- Structured `POST /audit` response: complete.
+- Secret evidence redaction and workspace cleanup: complete.
+- Security scores, remediation generation, narrative reports, AI reasoning, and
+  Root Cause Investigation: intentionally not implemented.
+
+The project stops for review after Sprint 3.

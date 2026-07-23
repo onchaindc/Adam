@@ -40,6 +40,8 @@ describe("RepositoryScanner", () => {
       const model = await new RepositoryScanner({
         maxFiles: 100,
         maxDepth: 10,
+        maxFileBytes: 100_000,
+        maxTotalSourceBytes: 1_000_000,
       }).scan(root, {
         name: "fixture",
         owner: "adam",
@@ -69,6 +71,10 @@ describe("RepositoryScanner", () => {
         model.summary.structure.topLevelEntries.includes("node_modules"),
         false,
       );
+      assert.match(
+        model.files.find((file) => file.path === "src/page.tsx").content,
+        /Page/,
+      );
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -84,7 +90,12 @@ describe("RepositoryScanner", () => {
       ]);
 
       await assert.rejects(
-        new RepositoryScanner({ maxFiles: 1, maxDepth: 10 }).scan(root, {
+        new RepositoryScanner({
+          maxFiles: 1,
+          maxDepth: 10,
+          maxFileBytes: 100_000,
+          maxTotalSourceBytes: 1_000_000,
+        }).scan(root, {
           name: "fixture",
           owner: "adam",
           url: "https://github.com/adam/fixture",

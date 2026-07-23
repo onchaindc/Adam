@@ -17,7 +17,7 @@ export interface ServiceRequest {
 }
 
 export interface PlaceholderServiceResponse {
-  readonly service: Exclude<ServiceKind, "repository-intelligence">;
+  readonly service: "root-cause-investigation";
   readonly status: "not-implemented";
   readonly requestId: string;
   readonly message: string;
@@ -79,6 +79,41 @@ export interface RepositoryIntelligenceResponse {
   readonly summary: RepositorySummary;
 }
 
+export type SecuritySeverity = "critical" | "high" | "medium" | "low";
+
+export type SecurityFindingCategory =
+  | "secrets"
+  | "dependencies"
+  | "authentication-authorization"
+  | "configuration"
+  | "static-pattern"
+  | "smart-contract";
+
+export interface SecurityFinding {
+  readonly id: string;
+  readonly ruleId: string;
+  readonly category: SecurityFindingCategory;
+  readonly title: string;
+  readonly severity: SecuritySeverity;
+  readonly file: string;
+  readonly line: number | null;
+  readonly description: string;
+  readonly evidence: string;
+  readonly confidence: DetectionConfidence;
+}
+
+export interface SecurityAuditResponse {
+  readonly service: "security-audit";
+  readonly status: "completed";
+  readonly requestId: string;
+  readonly repository: RepositorySummary["repository"];
+  readonly modulesExecuted: readonly SecurityFindingCategory[];
+  readonly filesAnalyzed: number;
+  readonly findings: readonly SecurityFinding[];
+  readonly limitations: readonly string[];
+}
+
 export type ServiceResponse =
   | PlaceholderServiceResponse
-  | RepositoryIntelligenceResponse;
+  | RepositoryIntelligenceResponse
+  | SecurityAuditResponse;

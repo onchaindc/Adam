@@ -4,6 +4,7 @@ export interface RepositoryFile {
   readonly path: string;
   readonly extension: string;
   readonly sizeBytes: number;
+  readonly content: string | null;
 }
 
 export interface RepositoryIdentity {
@@ -21,5 +22,6 @@ export interface RepositoryModel {
   readonly directories: readonly string[];
   readonly topLevelEntries: readonly string[];
   readonly manifestContents: Readonly<Record<string, string>>;
+  readonly analysisLimitations: readonly string[];
   readonly summary: RepositorySummary;
 }

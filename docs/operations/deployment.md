@@ -26,6 +26,8 @@ STATE_FILE=/data/runtime-state.json
 REPOSITORY_CLONE_TIMEOUT_MS=60000
 REPOSITORY_MAX_FILES=10000
 REPOSITORY_MAX_DEPTH=25
+REPOSITORY_MAX_FILE_BYTES=512000
+REPOSITORY_MAX_TOTAL_SOURCE_BYTES=10000000
 ```
 
 Railway injects `PORT`; do not hardcode it.
@@ -44,5 +46,5 @@ After deployment, verify:
 2. `GET /health` returns HTTP 200.
 3. `POST /repository/summary` returns HTTP 200 for a small public GitHub
    repository.
-4. `POST /audit` and `POST /investigate` return the documented HTTP 501
-   placeholder responses.
+4. `POST /audit` returns HTTP 200 with structured findings.
+5. `POST /investigate` returns the documented HTTP 501 placeholder response.

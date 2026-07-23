@@ -10,6 +10,25 @@ describe("HTTP routes", () => {
   it("serves health and placeholder service responses", async () => {
     const dispatcher = {
       async dispatch(service, request) {
+        if (service === "security-audit") {
+          return {
+            service,
+            status: "completed",
+            requestId: request.requestId,
+            repository: {
+              name: "Adam",
+              owner: "onchaindc",
+              url: "https://github.com/onchaindc/Adam",
+              defaultBranch: "main",
+              commitSha: "abc123",
+            },
+            modulesExecuted: ["secrets"],
+            filesAnalyzed: 1,
+            findings: [],
+            limitations: [],
+          };
+        }
+
         if (service === "repository-intelligence") {
           return {
             service,
@@ -107,7 +126,7 @@ describe("HTTP routes", () => {
           runtime: { instanceId: "test-instance", bootCount: 1 },
         },
       );
-      assert.equal(audit.status, 501);
+      assert.equal(audit.status, 200);
       assert.deepEqual(
         {
           ...(await audit.json()),
@@ -115,9 +134,19 @@ describe("HTTP routes", () => {
         },
         {
           service: "security-audit",
-          status: "not-implemented",
+          status: "completed",
           requestId: "ignored",
-          message: "placeholder",
+          repository: {
+            name: "Adam",
+            owner: "onchaindc",
+            url: "https://github.com/onchaindc/Adam",
+            defaultBranch: "main",
+            commitSha: "abc123",
+          },
+          modulesExecuted: ["secrets"],
+          filesAnalyzed: 1,
+          findings: [],
+          limitations: [],
         },
       );
       assert.equal(repositorySummary.status, 200);

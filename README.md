@@ -9,9 +9,9 @@ tool, a generic code generator, or a hackathon judging agent.
 
 ## Project status
 
-**Sprint 2: Repository Intelligence**
+**Sprint 3: Security Audit Engine**
 
-Sprint 1 is approved. The repository now contains:
+Sprints 1 and 2 are approved. The repository now contains:
 
 - a Node.js and TypeScript pnpm workspace;
 - a modular Express API;
@@ -21,30 +21,33 @@ Sprint 1 is approved. The repository now contains:
 - a reusable internal Repository Model;
 - deterministic language, framework, package-manager, Docker, CI/CD, Solidity,
   environment-file, and configuration-file detection;
+- independent secrets, dependency, authentication/authorization,
+  configuration, static-pattern, and Solidity inspectors;
+- deterministic structured security findings with severity, evidence,
+  file/line, and confidence;
 - structured logging and persistent operational runtime state;
 - Docker, Railway, and GitHub Actions configuration.
 
-Vulnerability detection, root cause reasoning, AI reasoning, and report
-generation remain intentionally unimplemented.
+Root cause reasoning, AI reasoning, security scoring, remediation generation,
+and report generation remain intentionally unimplemented.
 
-Last documentation review: **July 22, 2026**
+Last documentation review: **July 23, 2026**
 
 ## Initial services
 
 ### Security Audit
 
-Given a public GitHub repository, Adam will:
+Given a public GitHub repository, Adam:
 
 - map the repository and detect its technology stack;
 - inspect dependencies, configuration, secrets exposure, authentication, and
   authorization;
 - inspect smart contracts when present;
-- identify and prioritize likely vulnerabilities;
-- explain evidence, impact, and remediation;
-- return a security score and severity-ranked findings.
+- detect deterministic static security patterns;
+- return severity-ranked structured findings with evidence and confidence.
 
-The emphasis is evidence-backed engineering reasoning, not merely matching a
-vulnerability signature database.
+Sprint 3 does not generate a score, remediation, narrative explanation, or
+model-derived conclusion.
 
 ### Root Cause Investigation
 
@@ -81,14 +84,14 @@ flowchart LR
     Planner["Internal planner"]
     Workspace["Isolated ephemeral workspace"]
     RepositoryModel["Repository Model"]
-    Stack["Deterministic stack detection"]
+    Inspectors["Independent security inspectors"]
 
     Client -->|"A2MCP HTTP request"| API
     API --> Planner
     Planner --> Workspace
     Workspace --> RepositoryModel
-    RepositoryModel --> Stack
-    Stack --> API
+    RepositoryModel --> Inspectors
+    Inspectors --> API
     API -->|"structured result"| Client
 ```
 
@@ -129,8 +132,7 @@ documentation and known ambiguities.
 ```
 
 Directories are introduced only when they contain working code or active
-documentation. Sprint 3 analyzer, AI, root-cause, and reporting directories do
-not exist yet.
+documentation. AI, root-cause, and reporting directories do not exist yet.
 
 ## Run locally
 
@@ -165,9 +167,9 @@ POST /investigate
 }
 ```
 
-It returns a structured repository summary. `/audit` and `/investigate`
-continue to return HTTP 501 placeholder JSON until their approved
-implementation sprints.
+It returns a structured repository summary. `POST /audit` accepts the same
+request and returns structured security findings. `/investigate` continues to
+return HTTP 501 placeholder JSON.
 
 Run all repository checks:
 
@@ -200,9 +202,10 @@ deployment variable list.
 2. **Milestone 1:** complete and approved. Typed service foundation,
    free A2MCP HTTP boundary, persistent operational state, health routes,
    placeholder services, logging, CI, Docker, and Railway configuration.
-3. **Milestone 2:** repository intelligence implementation. Public GitHub
-   acquisition, Repository Model, file-tree scanning, and stack detection.
-4. **Milestone 3:** deliver one bounded Security Audit vertical slice.
+3. **Milestone 2:** complete and approved. Public GitHub acquisition,
+   Repository Model, file-tree scanning, and stack detection.
+4. **Milestone 3:** deterministic Security Audit Engine and structured
+   findings.
 5. **Milestone 4:** deliver one bounded Root Cause Investigation vertical slice.
 6. **Milestone 5:** harden isolation, observability, reliability, and Railway
    deployment.

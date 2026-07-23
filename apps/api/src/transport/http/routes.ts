@@ -6,7 +6,7 @@ import type { RuntimeState } from "../../platform/state/runtime-state.js";
 import { planRequest } from "../../planner/planner.js";
 import type { ServiceDispatcher } from "../../services/service-dispatcher.js";
 
-const repositorySummaryRequestSchema = z
+const repositoryRequestSchema = z
   .object({
     repositoryUrl: z.string().min(1),
   })
@@ -24,8 +24,8 @@ export function createRoutes(dependencies: RouteDependencies): Router {
     response.json({
       name: "Adam",
       role: "OKX A2MCP Agent Service Provider",
-      version: "0.2.0",
-      status: "repository-intelligence-ready",
+      version: "0.3.0",
+      status: "security-audit-ready",
       requestId: request.requestId,
     });
   });
@@ -42,16 +42,26 @@ export function createRoutes(dependencies: RouteDependencies): Router {
   });
 
   router.post("/audit", async (request, response) => {
+    const parsed = repositoryRequestSchema.safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({
+        error: "invalid-request",
+        requestId: request.requestId,
+        message: "Body must contain only a non-empty repositoryUrl string.",
+      });
+      return;
+    }
+
     const decision = planRequest({ requestedService: "security-audit" });
     const result = await dependencies.dispatcher.dispatch(decision.service, {
       requestId: request.requestId,
-      input: request.body,
+      input: parsed.data,
     });
-    response.status(501).json(result);
+    response.status(200).json(result);
   });
 
   router.post("/repository/summary", async (request, response) => {
-    const parsed = repositorySummaryRequestSchema.safeParse(request.body);
+    const parsed = repositoryRequestSchema.safeParse(request.body);
     if (!parsed.success) {
       response.status(400).json({
         error: "invalid-request",
