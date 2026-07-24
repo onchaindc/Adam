@@ -61,7 +61,7 @@ export class AiIntelligenceEngine {
     if (!this.provider) {
       throw new AiIntelligenceError(
         "ai-not-configured",
-        "Intelligent analysis is not configured. Set AI_PROVIDER=openai and provide OPENAI_API_KEY.",
+        "Intelligent analysis is not configured for the selected AI_PROVIDER.",
       );
     }
 

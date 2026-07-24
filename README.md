@@ -9,9 +9,9 @@ tool, a generic code generator, or a hackathon judging agent.
 
 ## Project status
 
-**Sprint 6.5: Evidence Traceability & AI Intelligence Layer**
+**Sprint 7: GitHub Pull Request Review**
 
-Sprints 1 through 6 are approved. The repository now contains:
+Sprints 1 through 6.5 are approved. The repository now contains:
 
 - a Node.js and TypeScript pnpm workspace;
 - a modular Express API;
@@ -45,6 +45,11 @@ Sprints 1 through 6 are approved. The repository now contains:
 - complete finding-to-evidence traceability for canonical recommendations;
 - deterministic analysis by default and optional evidence-constrained AI
   intelligence with strict finding-ID validation and bounded caching;
+- public GitHub pull request acquisition through the official GitHub API;
+- incremental changed-file-only repository modeling and deterministic security
+  review;
+- pull request intent routing and unified Planner responses without a full
+  repository clone;
 - structured logging and persistent operational runtime state;
 - Docker, Railway, and GitHub Actions configuration.
 
@@ -109,6 +114,21 @@ IDs, evidence IDs, repository file, line numbers, rule ID, confidence, and
 source service. All analysis endpoints accept `analysisMode`; it defaults to
 `deterministic`. `intelligent` mode can only explain and prioritize findings
 already produced by the deterministic engines.
+
+### GitHub Pull Request Review
+
+Given a public GitHub pull request, Adam:
+
+- retrieves metadata, changed-file statistics, patches, and available head
+  file content;
+- builds an ephemeral Repository Model containing only modified files;
+- reuses the existing deterministic Security Audit, scoring, evidence, and
+  traceability pipeline;
+- optionally applies the existing evidence-constrained AI layer;
+- falls back to a successful deterministic response with `aiReview: null` when
+  AI is disabled or unavailable;
+- lets the Planner route pull request review requests without cloning the full
+  repository.
 
 ## Product principles
 
@@ -215,6 +235,7 @@ GET  /health
 POST /repository/summary
 POST /audit
 POST /investigate
+POST /review-pr
 POST /plan
 ```
 
@@ -265,6 +286,30 @@ It returns the classification, execution plan, executed services, repository
 overview, optional security and root-cause results, overall risk,
 recommendations, and execution metadata.
 
+`POST /review-pr` accepts either a GitHub pull request URL:
+
+```json
+{
+  "pullRequest": "https://github.com/onchaindc/Adam/pull/3",
+  "analysisMode": "deterministic"
+}
+```
+
+or repository coordinates:
+
+```json
+{
+  "owner": "onchaindc",
+  "repo": "Adam",
+  "pullNumber": 3,
+  "analysisMode": "intelligent"
+}
+```
+
+Only changed files are analyzed. Public repositories are supported; an
+optional `GITHUB_TOKEN` raises GitHub API rate limits but does not enable
+private repository access.
+
 Run all repository checks:
 
 ```powershell
@@ -308,8 +353,9 @@ deployment variable list.
    dependency-ordered orchestration, and unified response.
 8. **Milestone 6.5:** evidence traceability and optional,
    evidence-constrained AI intelligence.
-9. **Milestone 7:** harden isolation, observability, reliability, and Railway
-   deployment.
+9. **Milestone 7:** GitHub Pull Request Review with changed-file-only
+   acquisition, deterministic security analysis, optional AI review, Planner
+   routing, and Railway production verification.
 10. **Milestone 8:** register, validate, and publish the ASP service in OKX.AI.
 
 Each milestone requires review before the next milestone begins.
@@ -317,6 +363,9 @@ Each milestone requires review before the next milestone begins.
 ## Current constraints
 
 - The first release supports public GitHub repositories only.
+- Pull request review analyzes available head content for changed files only;
+  removed, binary, and unavailable files remain visible in metadata but cannot
+  be statically inspected.
 - Adam will not execute repository scripts, package managers, builds, tests, or
   smart contracts by default.
 - Repository acquisition is shallow, non-interactive, temporary, and bounded by
@@ -324,7 +373,8 @@ Each milestone requires review before the next milestone begins.
 - Private repository authentication, arbitrary log URLs, asynchronous jobs, and
   A2A task handling are outside the initial approved scope.
 - Intelligent mode requires an explicitly configured provider key. Production
-  remains deterministic when `AI_PROVIDER=disabled`.
+  supports `AI_PROVIDER=openai` or `AI_PROVIDER=gemini` and remains
+  deterministic when `AI_PROVIDER=disabled`.
 - Exact request limits, final pricing, and production service metadata remain
   approval items.
 

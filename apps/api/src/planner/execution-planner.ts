@@ -24,6 +24,12 @@ const defaultCapabilities: readonly ServiceCapability[] = [
     prerequisites: ["repository-intelligence"],
     reason: "Correlate supplied logs with the shared Repository Model.",
   },
+  {
+    service: "pull-request-review",
+    prerequisites: [],
+    reason:
+      "Fetch the public GitHub Pull Request and review only its changed files.",
+  },
 ];
 
 const defaultTargets: readonly IntentTarget[] = [
@@ -42,6 +48,10 @@ const defaultTargets: readonly IntentTarget[] = [
   {
     intent: "combined-analysis",
     services: ["security-audit", "root-cause-investigation"],
+  },
+  {
+    intent: "pull-request-review",
+    services: ["pull-request-review"],
   },
 ];
 

@@ -2,7 +2,11 @@ import type { ExecutionPlanner } from "./execution-planner.js";
 import type { ResponseAggregator } from "./response-aggregator.js";
 import type { ServiceOrchestrator } from "./service-orchestrator.js";
 import { SharedExecutionContext } from "./shared-execution-context.js";
-import type { IntentClassifier, PlannerInput } from "./types.js";
+import type {
+  IntentClassifier,
+  PlannerInput,
+  PlannerPreparation,
+} from "./types.js";
 import type { UntracedPlannerUnifiedResponse } from "../traceability/types.js";
 
 export class PlannerEngine {
@@ -15,12 +19,12 @@ export class PlannerEngine {
 
   public async execute(
     input: PlannerInput,
-  ): Promise<UntracedPlannerUnifiedResponse> {
-    const classification = this.classifier.classify(input.request);
-    const plan = this.executionPlanner.createPlan(
-      classification,
+    preparation: PlannerPreparation = this.prepare(
+      input.request,
       input.logs.length > 0,
-    );
+    ),
+  ): Promise<UntracedPlannerUnifiedResponse> {
+    const { classification, plan } = preparation;
     const context = new SharedExecutionContext(
       input.requestId,
       input.request,
@@ -49,5 +53,19 @@ export class PlannerEngine {
       classification,
       plan,
     });
+  }
+
+  public prepare(request: string, hasLogs: boolean): PlannerPreparation {
+    const classification = this.classifier.classify(request);
+    return {
+      classification,
+      plan: this.executionPlanner.createPlan(classification, hasLogs),
+    };
+  }
+
+  public aggregatePullRequest(
+    input: Parameters<ResponseAggregator["aggregatePullRequest"]>[0],
+  ): UntracedPlannerUnifiedResponse {
+    return this.aggregator.aggregatePullRequest(input);
   }
 }

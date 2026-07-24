@@ -59,9 +59,33 @@ const environmentSchema = z
       .min(10)
       .max(50_000)
       .default(5_000),
-    AI_PROVIDER: z.enum(["disabled", "openai"]).default("disabled"),
+    GITHUB_TOKEN: z.string().min(1).optional(),
+    GITHUB_API_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1_000)
+      .max(120_000)
+      .default(30_000),
+    PULL_REQUEST_MAX_FILES: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(3_000)
+      .default(300),
+    PULL_REQUEST_MAX_PATCH_BYTES: z.coerce
+      .number()
+      .int()
+      .min(1_024)
+      .max(50_000_000)
+      .default(5_000_000),
+    AI_PROVIDER: z
+      .enum(["disabled", "openai", "gemini"])
+      .default("disabled"),
     OPENAI_API_KEY: z.string().min(1).optional(),
     OPENAI_MODEL: z.string().min(1).default("gpt-5.6-sol"),
+    GEMINI_API_KEY: z.string().min(1).optional(),
+    GOOGLE_API_KEY: z.string().min(1).optional(),
+    GEMINI_MODEL: z.string().min(1).default("gemini-3.6-flash"),
     AI_REQUEST_TIMEOUT_MS: z.coerce
       .number()
       .int()
@@ -80,19 +104,6 @@ const environmentSchema = z
       .min(1)
       .max(10_000)
       .default(100),
-  })
-  .superRefine((environment, context) => {
-    if (
-      environment.AI_PROVIDER === "openai" &&
-      !environment.OPENAI_API_KEY
-    ) {
-      context.addIssue({
-        code: "custom",
-        message: "OPENAI_API_KEY is required when AI_PROVIDER=openai.",
-        path: ["OPENAI_API_KEY"],
-        input: environment.OPENAI_API_KEY,
-      });
-    }
   });
 
 export type Environment = z.infer<typeof environmentSchema>;

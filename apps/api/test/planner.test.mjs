@@ -32,6 +32,16 @@ describe("planRequest", () => {
       },
     );
   });
+
+  it("routes pull request review without repository acquisition", () => {
+    assert.deepEqual(
+      planRequest({ requestedService: "pull-request-review" }),
+      {
+        service: "pull-request-review",
+        prerequisites: [],
+      },
+    );
+  });
 });
 
 describe("DeterministicIntentClassifier", () => {
@@ -51,6 +61,9 @@ describe("DeterministicIntentClassifier", () => {
       "combined-analysis",
     ],
     ["Show the repository structure", "repository-analysis"],
+    ["Review this pull request", "pull-request-review"],
+    ["Inspect PR #25", "pull-request-review"],
+    ["Review this GitHub PR", "pull-request-review"],
   ]) {
     it(`classifies "${request}" as ${expectedIntent}`, () => {
       assert.equal(classifier.classify(request).intent, expectedIntent);
@@ -118,5 +131,23 @@ describe("ExecutionPlanner", () => {
         ),
       /require at least one/i,
     );
+  });
+
+  it("creates a one-step pull request review plan", () => {
+    const plan = planner.createPlan(
+      {
+        intent: "pull-request-review",
+        confidence: "medium",
+        matchedSignals: ["pull-request-review"],
+        rationale: "pull request",
+      },
+      false,
+    );
+
+    assert.deepEqual(
+      plan.steps.map((step) => step.service),
+      ["pull-request-review"],
+    );
+    assert.deepEqual(plan.steps[0].prerequisites, []);
   });
 });

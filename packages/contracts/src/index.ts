@@ -2,13 +2,14 @@ export const SERVICE_KINDS = [
   "repository-intelligence",
   "security-audit",
   "root-cause-investigation",
+  "pull-request-review",
 ] as const;
 
 export type ServiceKind = (typeof SERVICE_KINDS)[number];
 
 export interface PlannerDecision {
   readonly service: ServiceKind;
-  readonly prerequisites: readonly "repository-intelligence"[];
+  readonly prerequisites: readonly ServiceKind[];
 }
 
 export interface ServiceRequest {
@@ -18,6 +19,7 @@ export interface ServiceRequest {
 
 export type DetectionConfidence = "high" | "medium" | "low";
 export type AnalysisMode = "deterministic" | "intelligent";
+export type AiProviderName = "openai" | "gemini";
 
 export interface StackDetection {
   readonly name: string;
@@ -206,7 +208,7 @@ export interface AiReasoningSection {
 
 export interface AiIntelligenceReport {
   readonly status: "completed" | "insufficient-evidence";
-  readonly provider: "openai" | null;
+  readonly provider: AiProviderName | null;
   readonly model: string | null;
   readonly cacheHit: boolean;
   readonly executiveSummary: AiReasoningSection;
@@ -349,11 +351,93 @@ export interface RootCauseInvestigationResponse {
   readonly limitations: readonly string[];
 }
 
+export type PullRequestFileStatus =
+  | "added"
+  | "modified"
+  | "removed"
+  | "renamed"
+  | "copied"
+  | "changed"
+  | "unchanged";
+
+export interface PullRequestMetadata {
+  readonly owner: string;
+  readonly repository: string;
+  readonly number: number;
+  readonly url: string;
+  readonly title: string;
+  readonly description: string | null;
+  readonly author: string;
+  readonly state: "open" | "closed";
+  readonly draft: boolean;
+  readonly baseBranch: string;
+  readonly headBranch: string;
+  readonly baseSha: string;
+  readonly headSha: string;
+  readonly commitCount: number;
+  readonly changedFileCount: number;
+  readonly additions: number;
+  readonly deletions: number;
+}
+
+export interface PullRequestChangedFile {
+  readonly filename: string;
+  readonly previousFilename: string | null;
+  readonly status: PullRequestFileStatus;
+  readonly additions: number;
+  readonly deletions: number;
+  readonly changes: number;
+  readonly patch: string | null;
+  readonly contentAvailable: boolean;
+}
+
+export interface PullRequestAiReview {
+  readonly status: "completed" | "insufficient-evidence";
+  readonly provider: AiProviderName | null;
+  readonly model: string | null;
+  readonly cacheHit: boolean;
+  readonly securityObservations: AiReasoningSection;
+  readonly possibleBugs: AiReasoningSection;
+  readonly maintainabilityConcerns: AiReasoningSection;
+  readonly breakingChangeRisks: AiReasoningSection;
+  readonly codeQualityComments: AiReasoningSection;
+  readonly remediationStrategy: AiReasoningSection;
+  readonly priorityRoadmap: AiReasoningSection;
+  readonly confidenceSummary: AiReasoningSection;
+  readonly limitations: readonly string[];
+}
+
+export interface PullRequestReviewResponse {
+  readonly service: "pull-request-review";
+  readonly status: "completed";
+  readonly requestId: string;
+  readonly analysisMode: AnalysisMode;
+  readonly pullRequest: PullRequestMetadata;
+  readonly summary: {
+    readonly filesChanged: number;
+    readonly filesAnalyzed: number;
+    readonly filesWithPatches: number;
+    readonly filesWithoutContent: number;
+    readonly additions: number;
+    readonly deletions: number;
+    readonly limitations: readonly string[];
+  };
+  readonly repositorySummary: RepositorySummary;
+  readonly riskRating: SecuritySeverity;
+  readonly securityScore: SecurityScore;
+  readonly changedFiles: readonly PullRequestChangedFile[];
+  readonly findings: readonly IntelligentSecurityFinding[];
+  readonly recommendations: readonly TraceableRecommendation[];
+  readonly traceability: EvidenceTraceability;
+  readonly aiReview: PullRequestAiReview | null;
+}
+
 export type PlannerIntent =
   | "repository-analysis"
   | "security-audit"
   | "root-cause-investigation"
-  | "combined-analysis";
+  | "combined-analysis"
+  | "pull-request-review";
 
 export interface PlannerIntentClassification {
   readonly intent: PlannerIntent;
@@ -413,6 +497,7 @@ export interface PlannerUnifiedResponse {
   readonly repositoryOverview: RepositorySummary;
   readonly securityAssessment: SecurityAuditResponse | null;
   readonly rootCauseInvestigation: RootCauseInvestigationResponse | null;
+  readonly pullRequestReview: PullRequestReviewResponse | null;
   readonly overallRisk: {
     readonly rating: SecuritySeverity | "not-assessed";
     readonly basis: string;
@@ -426,8 +511,8 @@ export interface PlannerUnifiedResponse {
     readonly completedAt: string;
     readonly durationMs: number;
     readonly timeline: readonly PlannerTimelineEntry[];
-    readonly sharedRepositoryModel: true;
-    readonly repositoryAcquisitions: 1;
+    readonly sharedRepositoryModel: boolean;
+    readonly repositoryAcquisitions: number;
   };
 }
 
@@ -435,4 +520,5 @@ export type ServiceResponse =
   | RepositoryIntelligenceResponse
   | SecurityAuditResponse
   | RootCauseInvestigationResponse
+  | PullRequestReviewResponse
   | PlannerUnifiedResponse;

@@ -1,4 +1,7 @@
-import type { DetectionConfidence } from "@adam/contracts";
+import type {
+  AiProviderName,
+  DetectionConfidence,
+} from "@adam/contracts";
 
 export const AI_SECTION_KEYS = [
   "executiveSummary",
@@ -46,7 +49,7 @@ export interface AiPrompt {
 }
 
 export interface AiReasoningProviderResult {
-  readonly provider: "openai";
+  readonly provider: AiProviderName;
   readonly model: string;
   readonly outputText: string;
 }

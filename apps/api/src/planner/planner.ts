@@ -16,7 +16,8 @@ export function planRequest(request: PlannerRequest): PlannerDecision {
   return {
     service: request.requestedService,
     prerequisites:
-      request.requestedService === "repository-intelligence"
+      request.requestedService === "repository-intelligence" ||
+      request.requestedService === "pull-request-review"
         ? []
         : ["repository-intelligence"],
   };

@@ -60,6 +60,7 @@ export class EvidenceTraceabilityEngine {
     const traces = [
       response.securityAssessment?.traceability,
       response.rootCauseInvestigation?.traceability,
+      response.pullRequestReview?.traceability,
     ].filter((trace) => trace !== undefined);
     const traceability = this.resolver.merge(traces);
 

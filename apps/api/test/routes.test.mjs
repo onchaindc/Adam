@@ -121,6 +121,42 @@ describe("HTTP routes", () => {
           };
         }
 
+        if (service === "pull-request-review") {
+          return {
+            service,
+            status: "completed",
+            requestId: request.requestId,
+            analysisMode: request.input.analysisMode,
+            pullRequest: {
+              owner: "onchaindc",
+              repository: "Adam",
+              number: 3,
+            },
+            summary: {
+              filesChanged: 1,
+              filesAnalyzed: 1,
+            },
+            riskRating: "low",
+            securityScore: {
+              value: 100,
+              maximum: 100,
+              scoringVersion: "1.0",
+              riskRating: "low",
+              categoryScores: [],
+            },
+            changedFiles: [],
+            findings: [],
+            recommendations: [],
+            traceability: {
+              complete: true,
+              findings: [],
+              evidence: [],
+              recommendations: [],
+            },
+            aiReview: null,
+          };
+        }
+
         return {
           service: "root-cause-investigation",
           status: "completed",
@@ -311,6 +347,22 @@ describe("HTTP routes", () => {
           ],
         }),
       });
+      const pullRequestReview = await fetch(`${baseUrl}/review-pr`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          pullRequest: "https://github.com/onchaindc/Adam/pull/3",
+          analysisMode: "deterministic",
+        }),
+      });
+      const invalidPullRequestReview = await fetch(
+        `${baseUrl}/review-pr`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ owner: "onchaindc" }),
+        },
+      );
       const invalidInvestigation = await fetch(`${baseUrl}/investigate`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -456,6 +508,16 @@ describe("HTTP routes", () => {
         "module-resolution",
       );
       assert.equal(invalidInvestigation.status, 400);
+      assert.equal(pullRequestReview.status, 200);
+      assert.equal(
+        (await pullRequestReview.json()).pullRequest.number,
+        3,
+      );
+      assert.equal(
+        receivedInputs["pull-request-review"].analysisMode,
+        "deterministic",
+      );
+      assert.equal(invalidPullRequestReview.status, 400);
       assert.equal(planned.status, 200);
       assert.equal(plannerInputs[0].analysisMode, "intelligent");
       assert.deepEqual((await planned.json()).servicesExecuted, [

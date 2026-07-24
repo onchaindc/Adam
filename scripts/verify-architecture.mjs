@@ -35,7 +35,7 @@ const forbiddenFuturePaths = [
 for (const path of forbiddenFuturePaths) {
   try {
     await readdir(new URL(`../${path}/`, import.meta.url));
-    violations.push(`${path}: unapproved future module exists during Sprint 6.5`);
+    violations.push(`${path}: unapproved future module exists during Sprint 7`);
   } catch (error) {
     if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") {
       throw error;

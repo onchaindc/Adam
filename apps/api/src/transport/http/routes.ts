@@ -22,6 +22,24 @@ const analysisRequestSchema = z
     analysisMode: analysisModeSchema,
   })
   .strict();
+const pullRequestUrlSchema = z
+  .object({
+    pullRequest: z.string().trim().min(1),
+    analysisMode: analysisModeSchema,
+  })
+  .strict();
+const pullRequestCoordinatesSchema = z
+  .object({
+    owner: z.string().trim().min(1),
+    repo: z.string().trim().min(1),
+    pullNumber: z.number().int().positive(),
+    analysisMode: analysisModeSchema,
+  })
+  .strict();
+const pullRequestReviewSchema = z.union([
+  pullRequestUrlSchema,
+  pullRequestCoordinatesSchema,
+]);
 
 export interface RouteDependencies {
   readonly dispatcher: ServiceDispatcher;
@@ -43,8 +61,8 @@ export function createRoutes(dependencies: RouteDependencies): Router {
     response.json({
       name: "Adam",
       role: "OKX A2MCP Agent Service Provider",
-      version: "0.6.5",
-      status: "evidence-intelligence-ready",
+      version: "0.7.0",
+      status: "pull-request-review-ready",
       requestId: request.requestId,
     });
   });
@@ -123,6 +141,28 @@ export function createRoutes(dependencies: RouteDependencies): Router {
     response.status(200).json(result);
   });
 
+  router.post("/review-pr", async (request, response) => {
+    const parsed = pullRequestReviewSchema.safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({
+        error: "invalid-request",
+        requestId: request.requestId,
+        message:
+          "Body must contain either pullRequest URL or owner, repo, and pullNumber, plus optional analysisMode.",
+      });
+      return;
+    }
+
+    const decision = planRequest({
+      requestedService: "pull-request-review",
+    });
+    const result = await dependencies.dispatcher.dispatch(decision.service, {
+      requestId: request.requestId,
+      input: parsed.data,
+    });
+    response.status(200).json(result);
+  });
+
   router.post("/plan", async (request, response) => {
     const parsed = plannerRequestSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -173,7 +213,11 @@ function createPlannerRequestSchema(environment: Environment) {
   return z
     .object({
       request: z.string().trim().min(1).max(2_000),
-      repositoryUrl: z.string().min(1),
+      repositoryUrl: z.string().min(1).optional(),
+      pullRequest: z.string().trim().min(1).optional(),
+      owner: z.string().trim().min(1).optional(),
+      repo: z.string().trim().min(1).optional(),
+      pullNumber: z.number().int().positive().optional(),
       analysisMode: analysisModeSchema,
       logs: z
         .array(logSchema)
@@ -181,13 +225,42 @@ function createPlannerRequestSchema(environment: Environment) {
         .default([]),
     })
     .strict()
-    .superRefine((input, context) =>
+    .superRefine((input, context) => {
       validateTotalLogBytes(
         input.logs,
         environment.INVESTIGATION_MAX_LOG_BYTES,
         context,
-      ),
-    );
+      );
+      const hasCoordinates =
+        input.owner !== undefined &&
+        input.repo !== undefined &&
+        input.pullNumber !== undefined;
+      const hasPartialCoordinates =
+        input.owner !== undefined ||
+        input.repo !== undefined ||
+        input.pullNumber !== undefined;
+      if (
+        input.repositoryUrl === undefined &&
+        input.pullRequest === undefined &&
+        !hasCoordinates
+      ) {
+        context.addIssue({
+          code: "custom",
+          message:
+            "Provide repositoryUrl or a pull request URL/coordinates.",
+          path: ["repositoryUrl"],
+          input,
+        });
+      }
+      if (hasPartialCoordinates && !hasCoordinates) {
+        context.addIssue({
+          code: "custom",
+          message: "owner, repo, and pullNumber must be provided together.",
+          path: ["owner"],
+          input,
+        });
+      }
+    });
 }
 
 function createLogSchema(environment: Environment) {

@@ -15,6 +15,21 @@ const securitySignals: readonly IntentSignal[] = [
   { name: "code-review", pattern: /\bcheck\b.*\bcode\b.*\bsecurity\b/i },
 ];
 
+const pullRequestSignals: readonly IntentSignal[] = [
+  {
+    name: "pull-request-review",
+    pattern: /\breview\b.*\bpull request\b/i,
+  },
+  {
+    name: "inspect-pr-number",
+    pattern: /\binspect\b.*\bpr\s*#?\d+\b/i,
+  },
+  {
+    name: "github-pr-review",
+    pattern: /\breview\b.*\b(?:github\s+)?pr\b/i,
+  },
+];
+
 const rootCauseSignals: readonly IntentSignal[] = [
   { name: "why-failing", pattern: /\bwhy\b.*\b(?:fail|failing|failed)\b/i },
   { name: "build-failure", pattern: /\bbuild\b.*\b(?:fail|error|broken)\b/i },
@@ -51,10 +66,22 @@ const combinedSignals: readonly IntentSignal[] = [
 export class DeterministicIntentClassifier implements IntentClassifier {
   public classify(request: string): PlannerIntentClassification {
     const normalized = request.trim();
+    const pullRequestMatches = matchSignals(
+      normalized,
+      pullRequestSignals,
+    );
     const securityMatches = matchSignals(normalized, securitySignals);
     const rootCauseMatches = matchSignals(normalized, rootCauseSignals);
     const combinedMatches = matchSignals(normalized, combinedSignals);
 
+    if (pullRequestMatches.length > 0) {
+      return classification(
+        "pull-request-review",
+        pullRequestMatches,
+        "The request asks Adam to review a GitHub Pull Request.",
+        confidenceFor(pullRequestMatches.length),
+      );
+    }
     if (
       combinedMatches.length > 0 ||
       (securityMatches.length > 0 && rootCauseMatches.length > 0)

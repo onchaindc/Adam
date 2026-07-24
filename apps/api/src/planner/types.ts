@@ -21,6 +21,11 @@ export interface PlannerInput {
   readonly model: RepositoryModel;
 }
 
+export interface PlannerPreparation {
+  readonly classification: PlannerIntentClassification;
+  readonly plan: import("@adam/contracts").PlannerExecutionPlan;
+}
+
 export interface IntentSignal {
   readonly name: string;
   readonly pattern: RegExp;

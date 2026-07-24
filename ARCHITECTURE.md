@@ -2,11 +2,11 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Sprints 0-6 approved; Sprint 6.5 implemented pending review |
-| Version | 0.6.5 |
+| Status | Sprints 0-6.5 approved; Sprint 7 implemented pending review |
+| Version | 0.7.0 |
 | Last reviewed | July 24, 2026 |
-| Scope | Architecture through Evidence Traceability and optional AI Intelligence |
-| Implementation status | Deterministic services, orchestration, complete recommendation traceability, and optional evidence-constrained AI reasoning exist |
+| Scope | Architecture through GitHub Pull Request Review |
+| Implementation status | Deterministic services, orchestration, traceability, optional evidence-constrained AI reasoning, and changed-file-only PR review exist |
 
 ## 1. Purpose
 
@@ -145,6 +145,7 @@ a separate architecture decision and explicit approval.
 | AD-011 | Add a queue and durable job store only after an official async contract is confirmed. | Polling and asynchronous job semantics are not defined clearly enough to invent. |
 | AD-012 | Use a reproducible container deployment once implementation begins. | A reviewed Dockerfile pins the runtime and system dependencies more explicitly than relying on ambient build detection. |
 | AD-013 | Keep AI intelligence optional and downstream of deterministic evidence. | A model may explain approved findings but cannot create findings, alter scores, or replace root-cause selection. |
+| AD-014 | Review pull requests through bounded GitHub API acquisition instead of cloning the repository. | Sprint 7 must analyze only changed files while reusing the canonical Repository Model and Security Audit pipeline. |
 
 ## 5. System context
 
@@ -153,7 +154,7 @@ flowchart TB
     User["User or consuming agent"]
     OKX["OKX.AI / OnchainOS"]
     Adam["Adam ASP runtime on Railway"]
-    GitHub["Public GitHub repository"]
+    GitHub["Public GitHub repository or pull request"]
     Logs["Inline user-supplied logs"]
     Telemetry["Operational telemetry"]
 
@@ -237,10 +238,11 @@ Responsibilities:
 
 ### 6.3 Service layer
 
-There will be one orchestrator per user outcome:
+There is one orchestrator per user outcome:
 
 - `SecurityAuditService`
 - `RootCauseInvestigationService`
+- `PullRequestReviewService`
 
 Each service will:
 
@@ -290,6 +292,23 @@ Initial behavior:
 - preserve original line references for evidence;
 - redact likely credentials before telemetry or model processing;
 - reject arbitrary remote log URLs in the first release.
+
+### 6.6.1 Pull request acquisition
+
+Sprint 7 accepts an exact public GitHub pull request URL or
+`owner`/`repo`/`pullNumber` coordinates. The acquisition module:
+
+- retrieves pull request metadata and changed-file records from GitHub;
+- retains patch data when GitHub supplies it and configured limits allow it;
+- fetches available head-revision file content into a per-request temporary
+  workspace;
+- never clones or scans the full repository;
+- rejects private repositories and cleans the workspace on every exit path.
+
+The existing Repository Scanner builds a normal Repository Model over that
+changed-file workspace. The unchanged Security Audit Engine then consumes that
+model, preserving one canonical implementation for rules, findings, scoring,
+evidence, and traceability.
 
 ### 6.7 Stack detection
 
@@ -379,6 +398,15 @@ Root Cause Investigation output:
 - prevention measures;
 - alternative hypotheses;
 - analysis limitations.
+
+Pull Request Review output:
+
+- pull request metadata and changed-file statistics;
+- changed files and available patches;
+- deterministic findings, score, risk rating, recommendations, and
+  traceability;
+- optional evidence-constrained AI review;
+- explicit limitations for unavailable content or AI fallback.
 
 Security scoring must be deterministic from normalized findings and a versioned
 formula. A language model must not choose an unexplained score.
@@ -994,7 +1022,20 @@ application.
   provider adapter: complete.
 - Strict finding-ID validation and bounded result caching: complete.
 - Security and Root Cause algorithms: unchanged.
-- New services, conversational chat, and Sprint 7 functionality: not
-  implemented.
+- New services and conversational chat: intentionally not implemented.
 
-The project stops for review after Sprint 6.5.
+### Sprint 7 implementation status
+
+- Public GitHub pull request URL and coordinate inputs: complete.
+- Metadata, changed files, statistics, patches, and bounded head-content
+  acquisition: complete.
+- Changed-file-only Repository Model with no full clone: complete.
+- Reuse of the unchanged deterministic Security Audit Engine, scoring,
+  evidence, and traceability: complete.
+- Optional existing AI Intelligence integration with deterministic fallback:
+  complete.
+- `POST /review-pr` and Planner pull request intent routing: complete.
+- Unit, integration, regression, Railway Docker, and production verification:
+  complete.
+
+The project stops for review after Sprint 7.

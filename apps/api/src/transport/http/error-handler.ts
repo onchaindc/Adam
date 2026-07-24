@@ -2,6 +2,7 @@ import type { ErrorRequestHandler } from "express";
 import type { Logger } from "pino";
 
 import { AiIntelligenceError } from "../../intelligence/ai/errors.js";
+import { PullRequestReviewError } from "../../investigation/pull-request/errors.js";
 import { RepositoryIntelligenceError } from "../../investigation/repository/errors.js";
 import { PlannerInputError } from "../../planner/errors.js";
 
@@ -34,6 +35,25 @@ export function createErrorHandler(logger: Logger): ErrorRequestHandler {
 
     if (error instanceof PlannerInputError) {
       response.status(400).json({
+        error: error.code,
+        requestId: request.requestId,
+        message: error.message,
+      });
+      return;
+    }
+
+    if (error instanceof PullRequestReviewError) {
+      const status =
+        error.code === "invalid-pull-request-reference"
+          ? 400
+          : error.code === "pull-request-not-found"
+            ? 404
+            : error.code === "pull-request-limit-exceeded"
+              ? 422
+              : error.code === "github-rate-limited"
+                ? 503
+                : 502;
+      response.status(status).json({
         error: error.code,
         requestId: request.requestId,
         message: error.message,

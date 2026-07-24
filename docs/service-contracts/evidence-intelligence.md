@@ -55,6 +55,26 @@ Reasoning Formatter and ID validation
 Intelligent response
 ```
 
+## Provider Selection
+
+`AI_PROVIDER` selects the provider at process startup:
+
+| Value | Credential | Model variable |
+| --- | --- | --- |
+| `disabled` | none | none |
+| `openai` | `OPENAI_API_KEY` | `OPENAI_MODEL` |
+| `gemini` | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `GEMINI_MODEL` |
+
+OpenAI uses the Responses API. Gemini uses the Interactions API. Both adapters
+implement the same internal `AiReasoningProvider` interface, request structured
+JSON, disable provider-side storage, and feed output through the same strict
+Reasoning Formatter.
+
+Provider credentials are optional at configuration-parse time so Adam can
+start safely. Selecting a provider without its credential creates no provider
+adapter, and intelligent audit, investigation, and planner requests return
+HTTP 503 `ai-not-configured` instead of falling through to another provider.
+
 The Planner makes at most one AI call after all selected services finish.
 Direct audit and investigation requests make at most one call. Identical
 evidence packages use a bounded process-local TTL cache, and the repository is

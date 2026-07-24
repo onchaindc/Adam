@@ -188,6 +188,21 @@ describe("Planner orchestration", () => {
       },
       { async scan() { return createModel(); } },
       {
+        prepare() {
+          return {
+            classification: {
+              intent: "security-audit",
+              confidence: "medium",
+              matchedSignals: ["audit"],
+              rationale: "Security request.",
+            },
+            plan: {
+              intent: "security-audit",
+              steps: [],
+              omittedServices: [],
+            },
+          };
+        },
         async execute() {
           throw new Error("orchestration failed");
         },
