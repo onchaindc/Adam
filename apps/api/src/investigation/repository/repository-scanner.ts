@@ -27,40 +27,98 @@ const manifestFilenames = new Set([
   "package.json",
   "pyproject.toml",
   "requirements.txt",
+  "pipfile",
+  "pipfile.lock",
+  "poetry.lock",
+  "uv.lock",
+  "pdm.lock",
+  "setup.py",
+  "setup.cfg",
   "cargo.toml",
+  "cargo.lock",
   "go.mod",
+  "go.sum",
+  "pom.xml",
+  "build.gradle",
+  "build.gradle.kts",
+  "settings.gradle",
+  "settings.gradle.kts",
+  "gradle.properties",
+  "package.swift",
+  "package.resolved",
+  "podfile",
+  "podfile.lock",
+  "cartfile",
+  "cartfile.resolved",
+  "cmakelists.txt",
+  "meson.build",
+  "makefile",
+  "configure.ac",
+  "conanfile.txt",
+  "conanfile.py",
+  "conan.lock",
+  "vcpkg.json",
+  "composer.json",
+  "composer.lock",
+  "packages.lock.json",
+  "paket.dependencies",
+  "paket.lock",
+  "nuget.config",
+  "directory.build.props",
+  "directory.build.targets",
+]);
+const manifestExtensions = new Set([
+  ".csproj",
+  ".fsproj",
+  ".vbproj",
+  ".sln",
+  ".props",
+  ".targets",
 ]);
 const MAX_MANIFEST_BYTES = 1_000_000;
 const inspectableExtensions = new Set([
   ".c",
+  ".cc",
   ".cjs",
   ".cpp",
+  ".csproj",
   ".cs",
   ".css",
+  ".cfg",
+  ".cxx",
+  ".gradle",
   ".go",
   ".h",
+  ".hh",
   ".hpp",
+  ".hxx",
   ".html",
+  ".ini",
   ".java",
   ".js",
   ".json",
   ".jsx",
   ".kt",
+  ".kts",
   ".md",
   ".mjs",
   ".php",
   ".properties",
+  ".props",
   ".py",
   ".rb",
   ".rs",
   ".sh",
   ".sol",
+  ".sln",
   ".swift",
+  ".targets",
   ".toml",
   ".ts",
   ".tsx",
   ".txt",
   ".vue",
+  ".xml",
   ".yaml",
   ".yml",
 ]);
@@ -165,7 +223,7 @@ export class RepositoryScanner {
         if (
           stats.isFile() &&
           stats.size <= MAX_MANIFEST_BYTES &&
-          manifestFilenames.has(entry.name.toLowerCase())
+          isManifestFile(entry.name, extension)
         ) {
           manifestContents[relativePath] =
             content ?? (await readFile(absolutePath, "utf8"));
@@ -196,6 +254,7 @@ export class RepositoryScanner {
     const summary: RepositorySummary = {
       repository: identity,
       languages: stack.languages,
+      detectedLanguages: stack.languages,
       frameworks: stack.frameworks,
       packageManager: stack.packageManager,
       structure: {
@@ -241,8 +300,16 @@ function isInspectableText(filename: string, extension: string): boolean {
     inspectableExtensions.has(extension) ||
     lowerFilename === "dockerfile" ||
     lowerFilename === "jenkinsfile" ||
+    manifestFilenames.has(lowerFilename) ||
     lowerFilename.startsWith(".env") ||
     lowerFilename.endsWith("rc")
+  );
+}
+
+function isManifestFile(filename: string, extension: string): boolean {
+  return (
+    manifestFilenames.has(filename.toLowerCase()) ||
+    manifestExtensions.has(extension)
   );
 }
 
@@ -294,9 +361,8 @@ function isConfigurationFile(path: string): boolean {
     filename.endsWith(".yml") ||
     filename === "tsconfig.json" ||
     filename === "jsconfig.json" ||
-    filename === "package.json" ||
-    filename === "go.mod" ||
-    filename === "cargo.toml" ||
-    filename === "pyproject.toml"
+    isManifestFile(filename, extname(filename).toLowerCase()) ||
+    filename === "androidmanifest.xml" ||
+    filename === "wp-config.php"
   );
 }

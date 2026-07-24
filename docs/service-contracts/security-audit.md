@@ -17,7 +17,7 @@ The repository must satisfy the public GitHub restrictions documented by the
 Repository Intelligence contract.
 `analysisMode` is optional and accepts `deterministic` or `intelligent`.
 
-## Sprint 4 behavior
+## Security audit behavior
 
 The service acquires the repository, builds the Sprint 2 Repository Model, and
 runs the Sprint 3 independent deterministic modules:
@@ -28,6 +28,12 @@ runs the Sprint 3 independent deterministic modules:
 - Configuration Inspector;
 - Static Security Pattern Inspector;
 - Smart Contract Inspector when Solidity is detected.
+
+The Static Security Pattern Inspector also consumes the canonical
+language-rule registry for Rust, Go, Python, Java, Kotlin, Swift, C, C++, C#,
+and PHP. These deterministic rules emit the existing finding schema and reuse
+the existing scoring, evidence, traceability, recommendation, audit, pull
+request review, and Planner paths.
 
 The Security Intelligence Layer then:
 
@@ -122,7 +128,8 @@ The Security Intelligence Layer then:
 ```
 
 Secret evidence is redacted. Dependency inspection is offline and does not
-query live package registries or vulnerability databases.
+query live package registries or vulnerability databases. Language-specific
+rules are static heuristics and do not claim runtime reachability.
 
 ## Scoring methodology
 

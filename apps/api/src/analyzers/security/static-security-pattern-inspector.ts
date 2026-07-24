@@ -8,6 +8,7 @@ import type {
   SecurityFindingCandidate,
   SecurityInspector,
 } from "./types.js";
+import { inspectLanguageSecurityPatterns } from "./language-security-rules.js";
 
 const staticRules = [
   {
@@ -99,6 +100,7 @@ export class StaticSecurityPatternInspector implements SecurityInspector {
       }
     }
 
+    findings.push(...inspectLanguageSecurityPatterns(model));
     return findings;
   }
 }

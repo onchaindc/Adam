@@ -2,11 +2,11 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Sprints 0-6.5 approved; Sprint 7 implemented pending review |
-| Version | 0.7.0 |
+| Status | Sprints 0-7 approved; Sprint 8 implemented pending review |
+| Version | 0.8.0 |
 | Last reviewed | July 24, 2026 |
-| Scope | Architecture through GitHub Pull Request Review |
-| Implementation status | Deterministic services, orchestration, traceability, optional evidence-constrained AI reasoning, and changed-file-only PR review exist |
+| Scope | Architecture through Multi-Language Intelligence |
+| Implementation status | Deterministic services, orchestration, traceability, optional evidence-constrained AI reasoning, changed-file-only PR review, and multi-language analysis exist |
 
 ## 1. Purpose
 
@@ -146,6 +146,7 @@ a separate architecture decision and explicit approval.
 | AD-012 | Use a reproducible container deployment once implementation begins. | A reviewed Dockerfile pins the runtime and system dependencies more explicitly than relying on ambient build detection. |
 | AD-013 | Keep AI intelligence optional and downstream of deterministic evidence. | A model may explain approved findings but cannot create findings, alter scores, or replace root-cause selection. |
 | AD-014 | Review pull requests through bounded GitHub API acquisition instead of cloning the repository. | Sprint 7 must analyze only changed files while reusing the canonical Repository Model and Security Audit pipeline. |
+| AD-015 | Extend the existing static-pattern inspector through one language-rule registry. | Sprint 8 must add language-specific analysis without duplicating the Security Engine, scoring, evidence, or traceability. |
 
 ## 5. System context
 
@@ -324,9 +325,16 @@ Detection output must include:
 
 No single filename should be treated as conclusive when evidence conflicts.
 
-Sprint 2 implements deterministic detection only. It does not install
-dependencies, execute repository code, invoke a model, identify
-vulnerabilities, or generate investigation conclusions.
+Sprint 8 extends deterministic detection with first-class Rust, Go, Python,
+Java, Kotlin, Swift, C, C++, C#, and PHP support. Source extensions, manifests,
+lockfiles, build systems, compiler configuration, dependency managers, and
+framework evidence contribute to confidence. The existing `languages` output
+is preserved and `detectedLanguages` exposes the same evidence-rich records for
+explicit client consumption.
+
+Detection does not install dependencies, execute repository code, invoke a
+model, identify vulnerabilities by itself, or generate investigation
+conclusions.
 
 ### 6.8 Analyzer registry
 
@@ -1038,4 +1046,19 @@ application.
 - Unit, integration, regression, Railway Docker, and production verification:
   complete.
 
-The project stops for review after Sprint 7.
+### Sprint 8 implementation status
+
+- First-class Rust, Go, Python, Java, Kotlin, Swift, C, C++, C#, and PHP
+  detection: complete.
+- Mixed-language detection with confidence, source counts, percentages, and
+  evidence: complete.
+- Manifest, lockfile, build-system, dependency-manager, compiler-config, and
+  framework evidence: complete.
+- One language-rule registry integrated with the existing static-pattern
+  inspector: complete.
+- Existing finding, scoring, evidence, traceability, audit, pull request, and
+  Planner paths reused without algorithm changes: complete.
+- Representative fixtures and regression coverage for every supported
+  language: complete.
+
+The project stops for review after Sprint 8.

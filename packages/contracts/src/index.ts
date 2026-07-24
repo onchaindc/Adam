@@ -31,6 +31,8 @@ export interface RepositoryLanguage {
   readonly name: string;
   readonly fileCount: number;
   readonly percentage: number;
+  readonly confidence: DetectionConfidence;
+  readonly evidence: readonly string[];
 }
 
 export interface RepositorySummary {
@@ -42,6 +44,7 @@ export interface RepositorySummary {
     readonly commitSha: string;
   };
   readonly languages: readonly RepositoryLanguage[];
+  readonly detectedLanguages: readonly RepositoryLanguage[];
   readonly frameworks: readonly StackDetection[];
   readonly packageManager: StackDetection | null;
   readonly structure: {
@@ -233,6 +236,7 @@ export interface SecurityReport {
   };
   readonly technologyStack: {
     readonly languages: readonly RepositoryLanguage[];
+    readonly detectedLanguages: readonly RepositoryLanguage[];
     readonly frameworks: readonly StackDetection[];
     readonly packageManager: StackDetection | null;
   };

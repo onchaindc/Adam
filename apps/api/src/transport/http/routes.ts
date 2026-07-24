@@ -61,8 +61,8 @@ export function createRoutes(dependencies: RouteDependencies): Router {
     response.json({
       name: "Adam",
       role: "OKX A2MCP Agent Service Provider",
-      version: "0.7.0",
-      status: "pull-request-review-ready",
+      version: "0.8.0",
+      status: "multi-language-intelligence-ready",
       requestId: request.requestId,
     });
   });

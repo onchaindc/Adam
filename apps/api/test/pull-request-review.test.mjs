@@ -78,8 +78,14 @@ describe("Pull Request Review", () => {
     assert.equal(response.pullRequest.number, 3);
     assert.equal(response.summary.filesChanged, 1);
     assert.equal(response.summary.filesAnalyzed, 1);
-    assert.equal(response.changedFiles[0].filename, "src/changed.ts");
+    assert.equal(response.changedFiles[0].filename, "src/changed.py");
     assert.equal(response.findings.some((finding) => finding.ruleId.includes("EVAL")), true);
+    assert.equal(
+      response.findings.some(
+        (finding) => finding.ruleId === "LANG-PYTHON-UNSAFE-YAML-LOAD",
+      ),
+      true,
+    );
     assert.equal(response.traceability.complete, true);
     assert.equal(
       response.recommendations.every(
@@ -199,21 +205,22 @@ function createFetcher() {
       if (value.includes("/pulls/3/files")) {
         return response(value, [
           {
-            filename: "src/changed.ts",
+            filename: "src/changed.py",
             status: "modified",
             additions: 1,
             deletions: 0,
             changes: 1,
-            patch: "@@ -1 +1 @@\n+eval(input)",
+            patch:
+              "@@ -1 +1,2 @@\n+eval(input)\n+yaml.load(input)",
             raw_url:
-              "https://github.com/onchaindc/Adam/raw/head123/src%2Fchanged.ts",
+              "https://github.com/onchaindc/Adam/raw/head123/src%2Fchanged.py",
           },
         ]);
       }
       if (value.startsWith("https://github.com/onchaindc/Adam/raw/")) {
         return response(
-          "https://raw.githubusercontent.com/onchaindc/Adam/head123/src/changed.ts",
-          "eval(input)\n",
+          "https://raw.githubusercontent.com/onchaindc/Adam/head123/src/changed.py",
+          "eval(input)\nyaml.load(input)\n",
           "text/plain",
         );
       }

@@ -64,6 +64,7 @@ export function buildSecurityReport(input: {
     },
     technologyStack: {
       languages: input.repositorySummary.languages,
+      detectedLanguages: input.repositorySummary.detectedLanguages,
       frameworks: input.repositorySummary.frameworks,
       packageManager: input.repositorySummary.packageManager,
     },

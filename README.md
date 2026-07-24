@@ -9,9 +9,9 @@ tool, a generic code generator, or a hackathon judging agent.
 
 ## Project status
 
-**Sprint 7: GitHub Pull Request Review**
+**Sprint 8: Multi-Language Intelligence**
 
-Sprints 1 through 6.5 are approved. The repository now contains:
+Sprints 1 through 7 are approved. The repository now contains:
 
 - a Node.js and TypeScript pnpm workspace;
 - a modular Express API;
@@ -50,6 +50,10 @@ Sprints 1 through 6.5 are approved. The repository now contains:
   review;
 - pull request intent routing and unified Planner responses without a full
   repository clone;
+- first-class Rust, Go, Python, Java, Kotlin, Swift, C, C++, C#, and PHP
+  repository detection with confidence and evidence;
+- deterministic language-specific security and reliability rules integrated
+  into the existing static-pattern inspector;
 - structured logging and persistent operational runtime state;
 - Docker, Railway, and GitHub Actions configuration.
 
@@ -129,6 +133,19 @@ Given a public GitHub pull request, Adam:
   AI is disabled or unavailable;
 - lets the Planner route pull request review requests without cloning the full
   repository.
+
+### Multi-Language Intelligence
+
+Repository Intelligence detects JavaScript/TypeScript and Solidity as before,
+plus first-class Rust, Go, Python, Java, Kotlin, Swift, C, C++, C#, and PHP.
+Each detected language includes source-file counts, percentage, confidence, and
+manifest or source evidence. Mixed-language repositories retain every detected
+language.
+
+The existing deterministic static-pattern inspector consumes one canonical
+language-rule registry. It detects bounded language-specific security and
+reliability patterns without executing repository code, installing
+dependencies, querying vulnerability databases, or changing security scoring.
 
 ## Product principles
 
@@ -356,7 +373,11 @@ deployment variable list.
 9. **Milestone 7:** GitHub Pull Request Review with changed-file-only
    acquisition, deterministic security analysis, optional AI review, Planner
    routing, and Railway production verification.
-10. **Milestone 8:** register, validate, and publish the ASP service in OKX.AI.
+10. **Milestone 8:** Multi-Language Intelligence with evidence-backed
+    detection and deterministic language-specific analysis for Rust, Go,
+    Python, Java, Kotlin, Swift, C, C++, C#, and PHP.
+11. **Future milestone:** register, validate, and publish the ASP service in
+    OKX.AI after explicit approval.
 
 Each milestone requires review before the next milestone begins.
 
@@ -368,6 +389,9 @@ Each milestone requires review before the next milestone begins.
   be statically inspected.
 - Adam will not execute repository scripts, package managers, builds, tests, or
   smart contracts by default.
+- Language-specific findings are deterministic static heuristics. They identify
+  evidence that warrants review, not runtime reachability or guaranteed
+  exploitability.
 - Repository acquisition is shallow, non-interactive, temporary, and bounded by
   configurable clone-time, file-count, and directory-depth limits.
 - Private repository authentication, arbitrary log URLs, asynchronous jobs, and
