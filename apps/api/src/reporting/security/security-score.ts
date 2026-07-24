@@ -95,7 +95,7 @@ function calculateCategoryScore(
       1,
       Math.round(
         severityPoints[finding.severity] *
-          confidenceMultiplier[finding.confidence] *
+          confidenceMultiplier[finding.intelligence.confidenceLevel] *
           likelihoodMultiplier[finding.intelligence.likelihood],
       ),
     ),
@@ -124,7 +124,9 @@ function riskFromFindings(
   if (
     findings.some(
       (finding) =>
-        finding.severity === "critical" && finding.confidence !== "low",
+        finding.severity === "critical" &&
+        finding.intelligence.confidenceLevel !== "low" &&
+        finding.intelligence.likelihood !== "low",
     )
   ) {
     return "critical";
@@ -132,8 +134,11 @@ function riskFromFindings(
   if (
     findings.some(
       (finding) =>
-        finding.severity === "critical" ||
-        (finding.severity === "high" && finding.confidence === "high"),
+        (finding.severity === "critical" &&
+          finding.intelligence.likelihood !== "low") ||
+        (finding.severity === "high" &&
+          finding.intelligence.confidenceLevel === "high" &&
+          finding.intelligence.likelihood !== "low"),
     )
   ) {
     return "high";

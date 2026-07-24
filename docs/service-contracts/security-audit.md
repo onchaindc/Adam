@@ -130,10 +130,11 @@ Scoring version `1.0` is deterministic:
 - Application Security uses weight `1.1`;
 - Dependencies and Configuration use weight `1.0`.
 
-Risk ratings use both score thresholds and finding severity so averaging cannot
-hide a critical result. A critical finding with medium or high confidence
-produces at least a Critical overall rating. A high-confidence High finding
-produces at least a High rating.
+Risk ratings use score thresholds, finding severity, analysis confidence, and
+likelihood so averaging cannot hide a credible critical result or let a
+low-likelihood documentation/example pattern overstate risk. A critical
+finding with medium or high analysis confidence and non-low likelihood
+produces at least a Critical overall rating.
 
 ## Evidence rules
 

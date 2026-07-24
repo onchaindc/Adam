@@ -239,6 +239,7 @@ export function buildFindingIntelligence(
   finding: SecurityFinding,
 ): SecurityFindingIntelligence {
   const profile = findProfile(finding);
+  const confidenceLevel = analysisConfidence(finding);
   const location =
     finding.line === null ? finding.file : `${finding.file}:${finding.line}`;
 
@@ -248,15 +249,27 @@ export function buildFindingIntelligence(
     potentialImpact: profile.potentialImpact,
     likelihood: constrainLikelihood(
       profile.baseLikelihood,
-      finding.confidence,
+      confidenceLevel,
     ),
     suggestedRemediation: profile.suggestedRemediation,
-    confidenceLevel: finding.confidence,
+    confidenceLevel,
     evidenceReferences: [finding.id],
   };
 }
 
 function findProfile(finding: SecurityFinding): RuleIntelligenceProfile {
+  if (isFixedPackageCacheCleanup(finding)) {
+    return {
+      whyItMatters:
+        "Recursive deletion is generally sensitive, but the cited command targets the fixed operating-system package cache path during image construction.",
+      potentialImpact:
+        "The recorded evidence does not show attacker-controlled path selection or deletion of application data.",
+      suggestedRemediation:
+        "Keep the deletion path fixed, do not interpolate repository input, and retain the command only as package-cache cleanup.",
+      baseLikelihood: "low",
+    };
+  }
+
   const exact = exactProfiles[finding.ruleId];
   if (exact) {
     return exact;
@@ -319,6 +332,33 @@ function constrainLikelihood(
   const confidenceCeiling =
     confidence === "high" ? 2 : confidence === "medium" ? 1 : 0;
   return rank[Math.min(baseIndex, confidenceCeiling)] ?? "low";
+}
+
+function analysisConfidence(
+  finding: SecurityFinding,
+): DetectionConfidence {
+  const lowerPath = finding.file.toLowerCase();
+  if (
+    isFixedPackageCacheCleanup(finding) ||
+    lowerPath.endsWith(".md") ||
+    lowerPath.includes("/docs/") ||
+    lowerPath.startsWith("docs/") ||
+    lowerPath.includes("/test/") ||
+    lowerPath.includes("/tests/") ||
+    lowerPath.includes("/fixture") ||
+    lowerPath.includes("/example")
+  ) {
+    return "low";
+  }
+  return finding.confidence;
+}
+
+function isFixedPackageCacheCleanup(finding: SecurityFinding): boolean {
+  return (
+    finding.ruleId === "STATIC-DANGEROUS-SHELL-COMMAND" &&
+    finding.file.toLowerCase().endsWith("dockerfile") &&
+    /rm\s+-rf\s+\/var\/lib\/apt\/lists\/\*/i.test(finding.evidence)
+  );
 }
 
 function secretProfile(

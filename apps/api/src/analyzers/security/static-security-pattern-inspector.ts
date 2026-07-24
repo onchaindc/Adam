@@ -28,7 +28,7 @@ const staticRules = [
     ruleId: "STATIC-CHILD-PROCESS-EXEC",
     title: "Shell command execution",
     severity: "high",
-    pattern: /\b(?:exec|execSync)\s*\(/,
+    pattern: /(?:^|[^\w.])(?:exec|execSync)\s*\(/,
     description: "The application executes a command through a system shell.",
   },
   {

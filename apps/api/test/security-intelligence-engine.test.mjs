@@ -118,6 +118,48 @@ describe("SecurityIntelligenceEngine", () => {
       /does not prove that the repository is vulnerability-free/,
     );
   });
+
+  it("does not overstate fixed cache cleanup or documentation examples", () => {
+    const result = new SecurityIntelligenceEngine().analyze({
+      repositorySummary: createSummary(),
+      modulesExecuted: ["static-pattern"],
+      filesAnalyzed: 2,
+      findings: [
+        finding({
+          id: "ADAM-SEC-0001",
+          ruleId: "STATIC-DANGEROUS-SHELL-COMMAND",
+          category: "static-pattern",
+          title: "Dangerous shell command",
+          severity: "critical",
+          file: "Dockerfile",
+          line: 10,
+          evidence: "&& rm -rf /var/lib/apt/lists/*",
+          confidence: "high",
+        }),
+        finding({
+          id: "ADAM-SEC-0002",
+          ruleId: "STATIC-EVAL",
+          category: "static-pattern",
+          title: "Dynamic code evaluation",
+          severity: "high",
+          file: "docs/example.md",
+          line: 4,
+          evidence: "eval(input)",
+          confidence: "high",
+        }),
+      ],
+      limitations: [],
+    });
+
+    assert.equal(result.findings[0].intelligence.confidenceLevel, "low");
+    assert.equal(result.findings[0].intelligence.likelihood, "low");
+    assert.equal(result.findings[1].intelligence.confidenceLevel, "low");
+    assert.notEqual(result.overallRiskRating, "critical");
+    assert.match(
+      result.findings[0].intelligence.potentialImpact,
+      /does not show attacker-controlled path selection/,
+    );
+  });
 });
 
 function finding(overrides) {
