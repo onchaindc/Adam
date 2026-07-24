@@ -1,12 +1,12 @@
 import type {
   DetectionConfidence,
   InvestigationEvidence,
-  RootCauseInvestigationResponse,
   SupportingLogEntry,
 } from "@adam/contracts";
 
 import type { RepositoryModel } from "../../investigation/repository/model.js";
 import type { RootCauseCandidate } from "../../investigation/root-cause/types.js";
+import type { UntracedRootCauseInvestigationResponse } from "../../traceability/types.js";
 
 export const INVESTIGATION_PIPELINE = [
   "receive-inputs",
@@ -25,7 +25,7 @@ export function buildInvestigationResponse(input: {
   readonly candidate: RootCauseCandidate;
   readonly entries: readonly SupportingLogEntry[];
   readonly limitations: readonly string[];
-}): RootCauseInvestigationResponse {
+}): UntracedRootCauseInvestigationResponse {
   const supportingLogEntries = input.entries
     .filter((entry) =>
       input.candidate.supportingEntryIds.includes(entry.id),

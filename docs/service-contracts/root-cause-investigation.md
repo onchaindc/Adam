@@ -9,6 +9,7 @@
 ```json
 {
   "repositoryUrl": "https://github.com/onchaindc/Adam",
+  "analysisMode": "deterministic",
   "logs": [
     {
       "source": "build",
@@ -22,6 +23,7 @@
 `source` must be one of `build`, `runtime`, `ci`, `stack-trace`, or
 `error-message`. Request count, bytes, and normalized lines are bounded by the
 `INVESTIGATION_MAX_LOG_*` settings.
+`analysisMode` is optional and defaults to `deterministic`.
 
 ## Processing
 
@@ -48,6 +50,7 @@ low-confidence `undetermined` result rather than an invented cause.
   "service": "root-cause-investigation",
   "status": "completed",
   "requestId": "generated-request-id",
+  "analysisMode": "deterministic",
   "investigationId": "ADAM-RCI-generated-request-id",
   "repository": {
     "name": "Adam",
@@ -68,6 +71,7 @@ low-confidence `undetermined` result rather than an invented cause.
   "evidence": [],
   "impact": "The application cannot compile or start because a required import is unavailable at the resolved path.",
   "recommendedFixes": [],
+  "recommendations": [],
   "prevention": [],
   "relatedFiles": [],
   "relatedDependencies": ["express"],
@@ -82,9 +86,17 @@ low-confidence `undetermined` result rather than an invented cause.
     "select-most-probable-cause",
     "produce-investigation-result"
   ],
+  "traceability": {
+    "complete": true,
+    "findings": [],
+    "evidence": [],
+    "recommendations": []
+  },
+  "aiIntelligence": null,
   "limitations": []
 }
 ```
 
 Adam does not execute repository code or reproduce the deployment. Repository
 workspaces and supplied logs remain request-scoped and are not persisted.
+Intelligent mode runs only after deterministic root-cause selection.

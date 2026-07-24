@@ -9,6 +9,10 @@ import { SmartContractInspector } from "./analyzers/security/smart-contract-insp
 import { StaticSecurityPatternInspector } from "./analyzers/security/static-security-pattern-inspector.js";
 import { createApp } from "./app.js";
 import { loadEnvironment } from "./config/environment.js";
+import { AiIntelligenceEngine } from "./intelligence/ai/ai-intelligence-engine.js";
+import { AiResultCache } from "./intelligence/ai/ai-result-cache.js";
+import { PromptBuilder } from "./intelligence/ai/prompt-builder.js";
+import { ReasoningFormatter } from "./intelligence/ai/reasoning-formatter.js";
 import { SecurityIntelligenceEngine } from "./intelligence/security/security-intelligence-engine.js";
 import { RepositoryScanner } from "./investigation/repository/repository-scanner.js";
 import { ConfigurationCauseDetector } from "./investigation/root-cause/detectors/configuration-cause-detector.js";
@@ -23,6 +27,7 @@ import { DeterministicIntentClassifier } from "./planner/intent-classifier.js";
 import { PlannerEngine } from "./planner/planner-engine.js";
 import { ResponseAggregator } from "./planner/response-aggregator.js";
 import { ServiceOrchestrator } from "./planner/service-orchestrator.js";
+import { OpenAiResponsesProvider } from "./platform/ai/openai-responses-provider.js";
 import { GitHubRepositoryAcquirer } from "./platform/github/github-repository.js";
 import { FileRuntimeStateStore } from "./platform/state/runtime-state.js";
 import { PlannerService } from "./services/planner-service.js";
@@ -30,6 +35,8 @@ import { RepositoryIntelligenceService } from "./services/repository-intelligenc
 import { RootCauseInvestigationService } from "./services/root-cause-investigation-service.js";
 import { SecurityAuditService } from "./services/security-audit-service.js";
 import { DefaultServiceDispatcher } from "./services/service-dispatcher.js";
+import { EvidenceLinkResolver } from "./traceability/evidence-link-resolver.js";
+import { EvidenceTraceabilityEngine } from "./traceability/evidence-traceability-engine.js";
 
 const environment = loadEnvironment();
 const logger = createLogger(environment);
@@ -44,6 +51,26 @@ const repositoryScanner = new RepositoryScanner({
   maxFileBytes: environment.REPOSITORY_MAX_FILE_BYTES,
   maxTotalSourceBytes: environment.REPOSITORY_MAX_TOTAL_SOURCE_BYTES,
 });
+const traceability = new EvidenceTraceabilityEngine(
+  new EvidenceLinkResolver(),
+);
+const aiProvider =
+  environment.AI_PROVIDER === "openai"
+    ? new OpenAiResponsesProvider({
+        apiKey: environment.OPENAI_API_KEY!,
+        model: environment.OPENAI_MODEL,
+        timeoutMs: environment.AI_REQUEST_TIMEOUT_MS,
+      })
+    : null;
+const aiIntelligence = new AiIntelligenceEngine(
+  aiProvider,
+  new PromptBuilder(),
+  new ReasoningFormatter(),
+  new AiResultCache(
+    environment.AI_CACHE_TTL_MS,
+    environment.AI_CACHE_MAX_ENTRIES,
+  ),
+);
 const repositoryIntelligenceService = new RepositoryIntelligenceService(
   repositoryAcquirer,
   repositoryScanner,
@@ -60,6 +87,8 @@ const securityAuditService = new SecurityAuditService(
     new SmartContractInspector(),
   ]),
   new SecurityIntelligenceEngine(),
+  traceability,
+  aiIntelligence,
 );
 const rootCauseInvestigationService = new RootCauseInvestigationService(
   repositoryAcquirer,
@@ -73,6 +102,8 @@ const rootCauseInvestigationService = new RootCauseInvestigationService(
       new SmartContractCauseDetector(),
     ],
   ),
+  traceability,
+  aiIntelligence,
 );
 const plannerService = new PlannerService(
   repositoryAcquirer,
@@ -87,6 +118,8 @@ const plannerService = new PlannerService(
     ]),
     new ResponseAggregator(),
   ),
+  traceability,
+  aiIntelligence,
 );
 const dispatcher = new DefaultServiceDispatcher({
   "repository-intelligence": repositoryIntelligenceService,

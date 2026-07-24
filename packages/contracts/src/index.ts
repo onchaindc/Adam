@@ -17,6 +17,7 @@ export interface ServiceRequest {
 }
 
 export type DetectionConfidence = "high" | "medium" | "low";
+export type AnalysisMode = "deterministic" | "intelligent";
 
 export interface StackDetection {
   readonly name: string;
@@ -150,6 +151,75 @@ export interface RecommendedSecurityFix {
   readonly suggestedRemediation: string;
 }
 
+export type TraceabilitySourceService =
+  | "security-audit"
+  | "root-cause-investigation";
+
+export interface FindingTraceability {
+  readonly findingId: string;
+  readonly evidenceIds: readonly string[];
+  readonly repositoryFile: string | null;
+  readonly lineNumbers: readonly number[];
+  readonly ruleId: string;
+  readonly confidence: DetectionConfidence;
+  readonly sourceService: TraceabilitySourceService;
+}
+
+export interface TraceableEvidence {
+  readonly evidenceId: string;
+  readonly relatedFindingIds: readonly string[];
+  readonly repositoryFile: string | null;
+  readonly lineNumbers: readonly number[];
+  readonly ruleId: string;
+  readonly confidence: DetectionConfidence;
+  readonly sourceService: TraceabilitySourceService;
+  readonly excerpt: string;
+}
+
+export interface TraceableRecommendation {
+  readonly recommendationId: string;
+  readonly text: string;
+  readonly relatedFindingIds: readonly string[];
+  readonly evidenceIds: readonly string[];
+  readonly repositoryFile: string | null;
+  readonly lineNumbers: readonly number[];
+  readonly ruleId: string;
+  readonly confidence: DetectionConfidence;
+  readonly sourceService: TraceabilitySourceService;
+}
+
+export interface TraceableRecommendedSecurityFix
+  extends RecommendedSecurityFix,
+    TraceableRecommendation {}
+
+export interface EvidenceTraceability {
+  readonly complete: true;
+  readonly findings: readonly FindingTraceability[];
+  readonly evidence: readonly TraceableEvidence[];
+  readonly recommendations: readonly TraceableRecommendation[];
+}
+
+export interface AiReasoningSection {
+  readonly content: string;
+  readonly findingIds: readonly string[];
+}
+
+export interface AiIntelligenceReport {
+  readonly status: "completed" | "insufficient-evidence";
+  readonly provider: "openai" | null;
+  readonly model: string | null;
+  readonly cacheHit: boolean;
+  readonly executiveSummary: AiReasoningSection;
+  readonly developerSummary: AiReasoningSection;
+  readonly businessImpact: AiReasoningSection;
+  readonly attackNarrative: AiReasoningSection;
+  readonly remediationStrategy: AiReasoningSection;
+  readonly priorityRoadmap: AiReasoningSection;
+  readonly architectureObservations: AiReasoningSection;
+  readonly confidenceSummary: AiReasoningSection;
+  readonly limitations: readonly string[];
+}
+
 export interface SecurityReport {
   readonly schemaVersion: "1.0";
   readonly repositoryOverview: {
@@ -184,13 +254,17 @@ export interface SecurityAuditResponse {
   readonly service: "security-audit";
   readonly status: "completed";
   readonly requestId: string;
+  readonly analysisMode: AnalysisMode;
   readonly repository: RepositorySummary["repository"];
   readonly modulesExecuted: readonly SecurityFindingCategory[];
   readonly filesAnalyzed: number;
   readonly findings: readonly IntelligentSecurityFinding[];
   readonly securityScore: SecurityScore;
   readonly overallRiskRating: SecuritySeverity;
-  readonly recommendedFixOrder: readonly RecommendedSecurityFix[];
+  readonly recommendedFixOrder: readonly TraceableRecommendedSecurityFix[];
+  readonly recommendations: readonly TraceableRecommendation[];
+  readonly traceability: EvidenceTraceability;
+  readonly aiIntelligence: AiIntelligenceReport | null;
   readonly report: SecurityReport;
   readonly limitations: readonly string[];
 }
@@ -243,6 +317,7 @@ export interface RootCauseInvestigationResponse {
   readonly service: "root-cause-investigation";
   readonly status: "completed";
   readonly requestId: string;
+  readonly analysisMode: AnalysisMode;
   readonly investigationId: string;
   readonly repository: RepositorySummary["repository"];
   readonly rootCause: {
@@ -254,6 +329,7 @@ export interface RootCauseInvestigationResponse {
   readonly evidence: readonly InvestigationEvidence[];
   readonly impact: string;
   readonly recommendedFixes: readonly string[];
+  readonly recommendations: readonly TraceableRecommendation[];
   readonly prevention: readonly string[];
   readonly relatedFiles: readonly string[];
   readonly relatedDependencies: readonly string[];
@@ -268,6 +344,8 @@ export interface RootCauseInvestigationResponse {
     "select-most-probable-cause",
     "produce-investigation-result",
   ];
+  readonly traceability: EvidenceTraceability;
+  readonly aiIntelligence: AiIntelligenceReport | null;
   readonly limitations: readonly string[];
 }
 
@@ -320,6 +398,7 @@ export interface PlannerUnifiedResponse {
   readonly service: "planner";
   readonly status: "completed";
   readonly requestId: string;
+  readonly analysisMode: AnalysisMode;
   readonly requestSummary: {
     readonly request: string;
     readonly intent: PlannerIntent;
@@ -339,6 +418,9 @@ export interface PlannerUnifiedResponse {
     readonly basis: string;
   };
   readonly overallRecommendations: readonly string[];
+  readonly recommendations: readonly TraceableRecommendation[];
+  readonly traceability: EvidenceTraceability;
+  readonly aiIntelligence: AiIntelligenceReport | null;
   readonly executionMetadata: {
     readonly startedAt: string;
     readonly completedAt: string;

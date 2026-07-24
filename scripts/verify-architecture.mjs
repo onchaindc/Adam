@@ -27,7 +27,6 @@ for (const file of sourceFiles) {
 }
 
 const forbiddenFuturePaths = [
-  "apps/api/src/platform/models",
   "apps/api/src/platform/a2mcp",
   "apps/api/src/platform/llm",
   "apps/api/src/chat",
@@ -36,7 +35,7 @@ const forbiddenFuturePaths = [
 for (const path of forbiddenFuturePaths) {
   try {
     await readdir(new URL(`../${path}/`, import.meta.url));
-    violations.push(`${path}: post-Sprint 6 module exists during Sprint 6`);
+    violations.push(`${path}: unapproved future module exists during Sprint 6.5`);
   } catch (error) {
     if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") {
       throw error;

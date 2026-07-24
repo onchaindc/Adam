@@ -31,9 +31,18 @@ REPOSITORY_MAX_TOTAL_SOURCE_BYTES=10000000
 INVESTIGATION_MAX_LOG_INPUTS=20
 INVESTIGATION_MAX_LOG_BYTES=200000
 INVESTIGATION_MAX_LOG_LINES=5000
+AI_PROVIDER=disabled
+OPENAI_MODEL=gpt-5.6-sol
+AI_REQUEST_TIMEOUT_MS=60000
+AI_CACHE_TTL_MS=300000
+AI_CACHE_MAX_ENTRIES=100
 ```
 
 Railway injects `PORT`; do not hardcode it.
+
+To enable intelligent mode, set `AI_PROVIDER=openai` and add
+`OPENAI_API_KEY` as a Railway secret. Deterministic mode requires no model
+credentials.
 
 Sprint 1 uses a free A2MCP service contract. Register the services with price
 `0`; no payment credentials or payment runtime variables are required.
@@ -56,3 +65,6 @@ After deployment, verify:
 6. `POST /plan` returns HTTP 200 with deterministic intent classification,
    a dependency-ordered execution plan, one shared repository acquisition,
    executed service outputs, and a unified response.
+7. Every canonical recommendation includes finding and evidence links.
+8. With `AI_PROVIDER=disabled`, intelligent requests return
+   `503 ai-not-configured` while deterministic requests remain healthy.

@@ -13,6 +13,15 @@ const repositoryRequestSchema = z
     repositoryUrl: z.string().min(1),
   })
   .strict();
+const analysisModeSchema = z
+  .enum(["deterministic", "intelligent"])
+  .default("deterministic");
+const analysisRequestSchema = z
+  .object({
+    repositoryUrl: z.string().min(1),
+    analysisMode: analysisModeSchema,
+  })
+  .strict();
 
 export interface RouteDependencies {
   readonly dispatcher: ServiceDispatcher;
@@ -34,8 +43,8 @@ export function createRoutes(dependencies: RouteDependencies): Router {
     response.json({
       name: "Adam",
       role: "OKX A2MCP Agent Service Provider",
-      version: "0.6.0",
-      status: "planner-orchestration-ready",
+      version: "0.6.5",
+      status: "evidence-intelligence-ready",
       requestId: request.requestId,
     });
   });
@@ -52,12 +61,13 @@ export function createRoutes(dependencies: RouteDependencies): Router {
   });
 
   router.post("/audit", async (request, response) => {
-    const parsed = repositoryRequestSchema.safeParse(request.body);
+    const parsed = analysisRequestSchema.safeParse(request.body);
     if (!parsed.success) {
       response.status(400).json({
         error: "invalid-request",
         requestId: request.requestId,
-        message: "Body must contain only a non-empty repositoryUrl string.",
+        message:
+          "Body must contain a repositoryUrl and optional analysisMode.",
       });
       return;
     }
@@ -141,6 +151,7 @@ function createInvestigationRequestSchema(environment: Environment) {
   return z
     .object({
       repositoryUrl: z.string().min(1),
+      analysisMode: analysisModeSchema,
       logs: z
         .array(logSchema)
         .min(1)
@@ -163,6 +174,7 @@ function createPlannerRequestSchema(environment: Environment) {
     .object({
       request: z.string().trim().min(1).max(2_000),
       repositoryUrl: z.string().min(1),
+      analysisMode: analysisModeSchema,
       logs: z
         .array(logSchema)
         .max(environment.INVESTIGATION_MAX_LOG_INPUTS)

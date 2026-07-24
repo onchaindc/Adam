@@ -9,8 +9,11 @@ import { PlannerInputError } from "../dist/planner/errors.js";
 
 describe("HTTP routes", () => {
   it("serves health and implemented service responses", async () => {
+    const receivedInputs = {};
+    const plannerInputs = [];
     const dispatcher = {
       async dispatch(service, request) {
+        receivedInputs[service] = request.input;
         if (service === "security-audit") {
           return {
             service,
@@ -163,6 +166,7 @@ describe("HTTP routes", () => {
       logger: pino({ enabled: false }),
       plannerService: {
         async execute(request) {
+          plannerInputs.push(request.input);
           if (request.input.request === "Why is my build failing?") {
             throw new PlannerInputError(
               "Root Cause Investigation requests require logs.",
@@ -270,7 +274,10 @@ describe("HTTP routes", () => {
       const audit = await fetch(`${baseUrl}/audit`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ repositoryUrl: "placeholder" }),
+        body: JSON.stringify({
+          repositoryUrl: "placeholder",
+          analysisMode: "intelligent",
+        }),
       });
       const repositorySummary = await fetch(
         `${baseUrl}/repository/summary`,
@@ -318,6 +325,15 @@ describe("HTTP routes", () => {
         body: JSON.stringify({
           request: "Audit this repository",
           repositoryUrl: "https://github.com/onchaindc/Adam",
+          analysisMode: "intelligent",
+        }),
+      });
+      const invalidAnalysisMode = await fetch(`${baseUrl}/audit`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          repositoryUrl: "https://github.com/onchaindc/Adam",
+          analysisMode: "creative",
         }),
       });
       const invalidPlan = await fetch(`${baseUrl}/plan`, {
@@ -349,6 +365,7 @@ describe("HTTP routes", () => {
         },
       );
       assert.equal(audit.status, 200);
+      assert.equal(receivedInputs["security-audit"].analysisMode, "intelligent");
       assert.deepEqual(
         {
           ...(await audit.json()),
@@ -431,16 +448,22 @@ describe("HTTP routes", () => {
       assert.equal(invalidRepositorySummary.status, 400);
       assert.equal(investigation.status, 200);
       assert.equal(
+        receivedInputs["root-cause-investigation"].analysisMode,
+        "deterministic",
+      );
+      assert.equal(
         (await investigation.json()).rootCause.category,
         "module-resolution",
       );
       assert.equal(invalidInvestigation.status, 400);
       assert.equal(planned.status, 200);
+      assert.equal(plannerInputs[0].analysisMode, "intelligent");
       assert.deepEqual((await planned.json()).servicesExecuted, [
         "repository-intelligence",
         "security-audit",
       ]);
       assert.equal(invalidPlan.status, 400);
+      assert.equal(invalidAnalysisMode.status, 400);
       assert.equal(rootCausePlanWithoutLogs.status, 400);
       assert.equal(
         (await rootCausePlanWithoutLogs.json()).error,

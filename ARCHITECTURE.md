@@ -2,11 +2,11 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Sprints 0-5 approved; Sprint 6 implemented pending review |
-| Version | 0.6 |
+| Status | Sprints 0-6 approved; Sprint 6.5 implemented pending review |
+| Version | 0.6.5 |
 | Last reviewed | July 24, 2026 |
-| Scope | Architecture through Planner and Service Orchestration |
-| Implementation status | Repository intelligence, security analysis, root-cause investigation, deterministic planning, shared context, orchestration, and unified aggregation exist |
+| Scope | Architecture through Evidence Traceability and optional AI Intelligence |
+| Implementation status | Deterministic services, orchestration, complete recommendation traceability, and optional evidence-constrained AI reasoning exist |
 
 ## 1. Purpose
 
@@ -144,6 +144,7 @@ a separate architecture decision and explicit approval.
 | AD-010 | Persist operational runtime identity only; keep business processing stateless. | Railway Volume storage satisfies operational continuity without retaining repositories, logs, or reports. |
 | AD-011 | Add a queue and durable job store only after an official async contract is confirmed. | Polling and asynchronous job semantics are not defined clearly enough to invent. |
 | AD-012 | Use a reproducible container deployment once implementation begins. | A reviewed Dockerfile pins the runtime and system dependencies more explicitly than relying on ambient build detection. |
+| AD-013 | Keep AI intelligence optional and downstream of deterministic evidence. | A model may explain approved findings but cannot create findings, alter scores, or replace root-cause selection. |
 
 ## 5. System context
 
@@ -983,4 +984,17 @@ application.
 - Conversational chat, external LLM providers, and new A2MCP integrations:
   intentionally not implemented.
 
-The project stops for review after Sprint 6.
+### Sprint 6.5 implementation status
+
+- Evidence Link Resolver and Evidence Traceability Engine: complete.
+- Stable recommendation, finding, evidence, file, line, rule, confidence, and
+  source-service links: complete.
+- Deterministic mode remains the default: complete.
+- Optional AI Intelligence Engine, Prompt Builder, Reasoning Formatter, and
+  provider adapter: complete.
+- Strict finding-ID validation and bounded result caching: complete.
+- Security and Root Cause algorithms: unchanged.
+- New services, conversational chat, and Sprint 7 functionality: not
+  implemented.
+
+The project stops for review after Sprint 6.5.

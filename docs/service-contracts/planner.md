@@ -44,6 +44,7 @@ create findings, alter security scores, or generate root-cause candidates.
 {
   "request": "Audit this repository and explain why deployment failed",
   "repositoryUrl": "https://github.com/onchaindc/Adam",
+  "analysisMode": "deterministic",
   "logs": [
     {
       "source": "build",
@@ -57,6 +58,7 @@ create findings, alter security scores, or generate root-cause candidates.
 `logs` is optional for repository and security requests. An explicit
 Root Cause Investigation requires at least one bounded log. Broad combined
 requests without logs omit Root Cause Investigation and record the reason.
+`analysisMode` is optional and defaults to `deterministic`.
 
 ## Deterministic intent examples
 
@@ -87,6 +89,7 @@ same immutable Repository Model and records its result into the context.
   "service": "planner",
   "status": "completed",
   "requestId": "generated-request-id",
+  "analysisMode": "deterministic",
   "requestSummary": {
     "request": "Audit this repository",
     "intent": "security-audit",
@@ -109,6 +112,14 @@ same immutable Repository Model and records its result into the context.
     "basis": "Overall risk is the approved deterministic Security Audit risk rating."
   },
   "overallRecommendations": [],
+  "recommendations": [],
+  "traceability": {
+    "complete": true,
+    "findings": [],
+    "evidence": [],
+    "recommendations": []
+  },
+  "aiIntelligence": null,
   "executionMetadata": {
     "timeline": [],
     "sharedRepositoryModel": true,
@@ -120,3 +131,6 @@ same immutable Repository Model and records its result into the context.
 Recommendations are deduplicated from existing service outputs. If Security
 Audit is not executed, `overallRisk.rating` is `not-assessed`; the Planner does
 not infer a security rating from repository or root-cause data.
+
+Intelligent mode is invoked once after deterministic service aggregation. It
+does not rescan the repository or re-run service engines.

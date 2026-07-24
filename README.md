@@ -9,9 +9,9 @@ tool, a generic code generator, or a hackathon judging agent.
 
 ## Project status
 
-**Sprint 6: Planner & Service Orchestration**
+**Sprint 6.5: Evidence Traceability & AI Intelligence Layer**
 
-Sprints 1 through 5 are approved. The repository now contains:
+Sprints 1 through 6 are approved. The repository now contains:
 
 - a Node.js and TypeScript pnpm workspace;
 - a modular Express API;
@@ -42,10 +42,13 @@ Sprints 1 through 5 are approved. The repository now contains:
 - one shared Repository Model across multi-service requests;
 - unified repository, security, root-cause, risk, recommendation, and execution
   metadata responses;
+- complete finding-to-evidence traceability for canonical recommendations;
+- deterministic analysis by default and optional evidence-constrained AI
+  intelligence with strict finding-ID validation and bounded caching;
 - structured logging and persistent operational runtime state;
 - Docker, Railway, and GitHub Actions configuration.
 
-Conversational chat, external-model reasoning, and new A2MCP integrations remain
+Conversational chat, new services, and new A2MCP integrations remain
 intentionally unimplemented.
 
 Last documentation review: **July 24, 2026**
@@ -98,6 +101,14 @@ Given a natural-language request, repository URL, and optional logs, Adam:
 Broad combined requests without logs run Repository Intelligence and Security
 Audit while documenting why Root Cause Investigation was omitted. Explicit
 failure investigations require logs and fail validation rather than guessing.
+
+### Evidence Traceability & AI Intelligence
+
+Every canonical recommendation includes its recommendation ID, related finding
+IDs, evidence IDs, repository file, line numbers, rule ID, confidence, and
+source service. All analysis endpoints accept `analysisMode`; it defaults to
+`deterministic`. `intelligent` mode can only explain and prioritize findings
+already produced by the deterministic engines.
 
 ## Product principles
 
@@ -211,7 +222,8 @@ POST /plan
 
 ```json
 {
-  "repositoryUrl": "https://github.com/onchaindc/Adam"
+  "repositoryUrl": "https://github.com/onchaindc/Adam",
+  "analysisMode": "deterministic"
 }
 ```
 
@@ -239,6 +251,7 @@ inline logs and returns a structured root-cause investigation.
 {
   "request": "Audit this repository and explain why deployment failed",
   "repositoryUrl": "https://github.com/onchaindc/Adam",
+  "analysisMode": "intelligent",
   "logs": [
     {
       "source": "runtime",
@@ -293,9 +306,11 @@ deployment variable list.
    causes, evidence, fixes, prevention, and production endpoint.
 7. **Milestone 6:** deterministic Planner, shared execution context,
    dependency-ordered orchestration, and unified response.
-8. **Milestone 7:** harden isolation, observability, reliability, and Railway
+8. **Milestone 6.5:** evidence traceability and optional,
+   evidence-constrained AI intelligence.
+9. **Milestone 7:** harden isolation, observability, reliability, and Railway
    deployment.
-9. **Milestone 8:** register, validate, and publish the ASP service in OKX.AI.
+10. **Milestone 8:** register, validate, and publish the ASP service in OKX.AI.
 
 Each milestone requires review before the next milestone begins.
 
@@ -308,6 +323,8 @@ Each milestone requires review before the next milestone begins.
   configurable clone-time, file-count, and directory-depth limits.
 - Private repository authentication, arbitrary log URLs, asynchronous jobs, and
   A2A task handling are outside the initial approved scope.
+- Intelligent mode requires an explicitly configured provider key. Production
+  remains deterministic when `AI_PROVIDER=disabled`.
 - Exact request limits, final pricing, and production service metadata remain
   approval items.
 

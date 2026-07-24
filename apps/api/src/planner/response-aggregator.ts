@@ -1,20 +1,20 @@
 import type {
   PlannerExecutionPlan,
   PlannerIntentClassification,
-  PlannerUnifiedResponse,
   RepositoryIntelligenceResponse,
   RootCauseInvestigationResponse,
   SecurityAuditResponse,
 } from "@adam/contracts";
 
 import type { SharedExecutionContext } from "./shared-execution-context.js";
+import type { UntracedPlannerUnifiedResponse } from "../traceability/types.js";
 
 export class ResponseAggregator {
   public aggregate(input: {
     readonly context: SharedExecutionContext;
     readonly classification: PlannerIntentClassification;
     readonly plan: PlannerExecutionPlan;
-  }): PlannerUnifiedResponse {
+  }): UntracedPlannerUnifiedResponse {
     const repository = requireRepositoryResult(input.context);
     const security = getSecurityResult(input.context);
     const investigation = getInvestigationResult(input.context);

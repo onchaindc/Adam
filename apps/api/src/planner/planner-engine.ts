@@ -1,10 +1,9 @@
-import type { PlannerUnifiedResponse } from "@adam/contracts";
-
 import type { ExecutionPlanner } from "./execution-planner.js";
 import type { ResponseAggregator } from "./response-aggregator.js";
 import type { ServiceOrchestrator } from "./service-orchestrator.js";
 import { SharedExecutionContext } from "./shared-execution-context.js";
 import type { IntentClassifier, PlannerInput } from "./types.js";
+import type { UntracedPlannerUnifiedResponse } from "../traceability/types.js";
 
 export class PlannerEngine {
   public constructor(
@@ -14,7 +13,9 @@ export class PlannerEngine {
     private readonly aggregator: ResponseAggregator,
   ) {}
 
-  public async execute(input: PlannerInput): Promise<PlannerUnifiedResponse> {
+  public async execute(
+    input: PlannerInput,
+  ): Promise<UntracedPlannerUnifiedResponse> {
     const classification = this.classifier.classify(input.request);
     const plan = this.executionPlanner.createPlan(
       classification,

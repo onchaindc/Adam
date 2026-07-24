@@ -59,6 +59,40 @@ const environmentSchema = z
       .min(10)
       .max(50_000)
       .default(5_000),
+    AI_PROVIDER: z.enum(["disabled", "openai"]).default("disabled"),
+    OPENAI_API_KEY: z.string().min(1).optional(),
+    OPENAI_MODEL: z.string().min(1).default("gpt-5.6-sol"),
+    AI_REQUEST_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1_000)
+      .max(300_000)
+      .default(60_000),
+    AI_CACHE_TTL_MS: z.coerce
+      .number()
+      .int()
+      .min(1_000)
+      .max(86_400_000)
+      .default(300_000),
+    AI_CACHE_MAX_ENTRIES: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(10_000)
+      .default(100),
+  })
+  .superRefine((environment, context) => {
+    if (
+      environment.AI_PROVIDER === "openai" &&
+      !environment.OPENAI_API_KEY
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "OPENAI_API_KEY is required when AI_PROVIDER=openai.",
+        path: ["OPENAI_API_KEY"],
+        input: environment.OPENAI_API_KEY,
+      });
+    }
   });
 
 export type Environment = z.infer<typeof environmentSchema>;
