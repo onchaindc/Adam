@@ -18,8 +18,14 @@ import { SmartContractCauseDetector } from "./investigation/root-cause/detectors
 import { LogNormalizer } from "./investigation/root-cause/log-normalizer.js";
 import { RootCauseEngine } from "./investigation/root-cause/root-cause-engine.js";
 import { createLogger } from "./logging/logger.js";
+import { ExecutionPlanner } from "./planner/execution-planner.js";
+import { DeterministicIntentClassifier } from "./planner/intent-classifier.js";
+import { PlannerEngine } from "./planner/planner-engine.js";
+import { ResponseAggregator } from "./planner/response-aggregator.js";
+import { ServiceOrchestrator } from "./planner/service-orchestrator.js";
 import { GitHubRepositoryAcquirer } from "./platform/github/github-repository.js";
 import { FileRuntimeStateStore } from "./platform/state/runtime-state.js";
+import { PlannerService } from "./services/planner-service.js";
 import { RepositoryIntelligenceService } from "./services/repository-intelligence-service.js";
 import { RootCauseInvestigationService } from "./services/root-cause-investigation-service.js";
 import { SecurityAuditService } from "./services/security-audit-service.js";
@@ -68,6 +74,20 @@ const rootCauseInvestigationService = new RootCauseInvestigationService(
     ],
   ),
 );
+const plannerService = new PlannerService(
+  repositoryAcquirer,
+  repositoryScanner,
+  new PlannerEngine(
+    new DeterministicIntentClassifier(),
+    new ExecutionPlanner(),
+    new ServiceOrchestrator([
+      repositoryIntelligenceService,
+      securityAuditService,
+      rootCauseInvestigationService,
+    ]),
+    new ResponseAggregator(),
+  ),
+);
 const dispatcher = new DefaultServiceDispatcher({
   "repository-intelligence": repositoryIntelligenceService,
   "security-audit": securityAuditService,
@@ -77,6 +97,7 @@ const app = createApp({
   dispatcher,
   environment,
   logger,
+  plannerService,
   runtimeState,
 });
 const server = createServer(app);

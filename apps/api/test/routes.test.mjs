@@ -5,6 +5,7 @@ import pino from "pino";
 
 import { createApp } from "../dist/app.js";
 import { loadEnvironment } from "../dist/config/environment.js";
+import { PlannerInputError } from "../dist/planner/errors.js";
 
 describe("HTTP routes", () => {
   it("serves health and implemented service responses", async () => {
@@ -160,6 +161,96 @@ describe("HTTP routes", () => {
       dispatcher,
       environment: loadEnvironment({ NODE_ENV: "test" }),
       logger: pino({ enabled: false }),
+      plannerService: {
+        async execute(request) {
+          if (request.input.request === "Why is my build failing?") {
+            throw new PlannerInputError(
+              "Root Cause Investigation requests require logs.",
+            );
+          }
+          return {
+            service: "planner",
+            status: "completed",
+            requestId: request.requestId,
+            requestSummary: {
+              request: request.input.request,
+              intent: "security-audit",
+              confidence: "medium",
+            },
+            plannerDecision: {
+              classification: {
+                intent: "security-audit",
+                confidence: "medium",
+                matchedSignals: ["audit"],
+                rationale: "Security request.",
+              },
+              executionPlan: {
+                intent: "security-audit",
+                steps: [
+                  {
+                    order: 1,
+                    service: "repository-intelligence",
+                    prerequisites: [],
+                    reason: "Repository context.",
+                  },
+                  {
+                    order: 2,
+                    service: "security-audit",
+                    prerequisites: ["repository-intelligence"],
+                    reason: "Security audit.",
+                  },
+                ],
+                omittedServices: [],
+              },
+              decisions: [],
+            },
+            servicesExecuted: [
+              "repository-intelligence",
+              "security-audit",
+            ],
+            repositoryOverview: {
+              repository: {
+                name: "Adam",
+                owner: "onchaindc",
+                url: "https://github.com/onchaindc/Adam",
+                defaultBranch: "main",
+                commitSha: "abc123",
+              },
+              languages: [],
+              frameworks: [],
+              packageManager: null,
+              structure: {
+                topLevelEntries: [],
+                directories: [],
+                fileTree: [],
+              },
+              docker: { detected: false, files: [] },
+              ciCd: { detected: false, files: [] },
+              smartContracts: { detected: false, solidityFiles: [] },
+              environmentFiles: [],
+              configurationFiles: [],
+              totalFilesScanned: 0,
+              ignoredDirectories: [],
+              limitations: [],
+            },
+            securityAssessment: null,
+            rootCauseInvestigation: null,
+            overallRisk: {
+              rating: "not-assessed",
+              basis: "Fixture.",
+            },
+            overallRecommendations: [],
+            executionMetadata: {
+              startedAt: "2026-07-24T00:00:00.000Z",
+              completedAt: "2026-07-24T00:00:00.001Z",
+              durationMs: 1,
+              timeline: [],
+              sharedRepositoryModel: true,
+              repositoryAcquisitions: 1,
+            },
+          };
+        },
+      },
       runtimeState: {
         instanceId: "test-instance",
         bootCount: 1,
@@ -219,6 +310,29 @@ describe("HTTP routes", () => {
         body: JSON.stringify({
           repositoryUrl: "https://github.com/onchaindc/Adam",
           logs: [],
+        }),
+      });
+      const planned = await fetch(`${baseUrl}/plan`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          request: "Audit this repository",
+          repositoryUrl: "https://github.com/onchaindc/Adam",
+        }),
+      });
+      const invalidPlan = await fetch(`${baseUrl}/plan`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          repositoryUrl: "https://github.com/onchaindc/Adam",
+        }),
+      });
+      const rootCausePlanWithoutLogs = await fetch(`${baseUrl}/plan`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          request: "Why is my build failing?",
+          repositoryUrl: "https://github.com/onchaindc/Adam",
         }),
       });
 
@@ -321,6 +435,17 @@ describe("HTTP routes", () => {
         "module-resolution",
       );
       assert.equal(invalidInvestigation.status, 400);
+      assert.equal(planned.status, 200);
+      assert.deepEqual((await planned.json()).servicesExecuted, [
+        "repository-intelligence",
+        "security-audit",
+      ]);
+      assert.equal(invalidPlan.status, 400);
+      assert.equal(rootCausePlanWithoutLogs.status, 400);
+      assert.equal(
+        (await rootCausePlanWithoutLogs.json()).error,
+        "invalid-plan-input",
+      );
     } finally {
       await new Promise((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));

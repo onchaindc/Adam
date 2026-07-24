@@ -4,6 +4,7 @@ import { pinoHttp } from "pino-http";
 
 import type { Environment } from "./config/environment.js";
 import type { RuntimeState } from "./platform/state/runtime-state.js";
+import type { AdamService } from "./services/adam-service.js";
 import type { ServiceDispatcher } from "./services/service-dispatcher.js";
 import { createErrorHandler } from "./transport/http/error-handler.js";
 import { requestContext } from "./transport/http/request-context.js";
@@ -13,6 +14,7 @@ export interface AppDependencies {
   readonly dispatcher: ServiceDispatcher;
   readonly environment: Environment;
   readonly logger: Logger;
+  readonly plannerService: AdamService;
   readonly runtimeState: RuntimeState;
 }
 

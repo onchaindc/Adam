@@ -53,3 +53,6 @@ After deployment, verify:
    score, recommended fix order, and structured report.
 5. `POST /investigate` returns HTTP 200 with a structured, evidence-backed
    investigation result for a valid public repository and bounded logs.
+6. `POST /plan` returns HTTP 200 with deterministic intent classification,
+   a dependency-ordered execution plan, one shared repository acquisition,
+   executed service outputs, and a unified response.

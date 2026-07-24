@@ -28,14 +28,15 @@ for (const file of sourceFiles) {
 
 const forbiddenFuturePaths = [
   "apps/api/src/platform/models",
-  "apps/api/src/planner/intelligence",
-  "apps/api/src/orchestration",
+  "apps/api/src/platform/a2mcp",
+  "apps/api/src/platform/llm",
+  "apps/api/src/chat",
 ];
 
 for (const path of forbiddenFuturePaths) {
   try {
     await readdir(new URL(`../${path}/`, import.meta.url));
-    violations.push(`${path}: Sprint 6+ module exists during Sprint 5`);
+    violations.push(`${path}: post-Sprint 6 module exists during Sprint 6`);
   } catch (error) {
     if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") {
       throw error;

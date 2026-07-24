@@ -2,15 +2,20 @@ import type { SecurityAuditResponse, ServiceRequest } from "@adam/contracts";
 
 import type { SecurityAuditEngine } from "../analyzers/security/security-audit-engine.js";
 import type { SecurityIntelligenceEngine } from "../intelligence/security/security-intelligence-engine.js";
+import type { RepositoryModel } from "../investigation/repository/model.js";
 import type { RepositoryScanner } from "../investigation/repository/repository-scanner.js";
+import type { SharedExecutionContext } from "../planner/shared-execution-context.js";
 import type { GitHubRepositoryAcquirer } from "../platform/github/github-repository.js";
-import type { AdamService } from "./placeholder-services.js";
+import type { AdamService } from "./adam-service.js";
+import { withRepositoryModel } from "./repository-model-execution.js";
 
 interface SecurityAuditInput {
   readonly repositoryUrl: string;
 }
 
 export class SecurityAuditService implements AdamService {
+  public readonly service = "security-audit" as const;
+
   public constructor(
     private readonly acquirer: GitHubRepositoryAcquirer,
     private readonly scanner: RepositoryScanner,
@@ -20,41 +25,48 @@ export class SecurityAuditService implements AdamService {
 
   public async execute(request: ServiceRequest): Promise<SecurityAuditResponse> {
     const input = request.input as SecurityAuditInput;
-    const acquired = await this.acquirer.acquire(input.repositoryUrl);
+    return withRepositoryModel(
+      this.acquirer,
+      this.scanner,
+      input.repositoryUrl,
+      (model) => this.analyzeModel(request.requestId, model),
+    );
+  }
 
-    try {
-      const model = await this.scanner.scan(acquired.directory, {
-        name: acquired.reference.name,
-        owner: acquired.reference.owner,
-        url: acquired.reference.canonicalUrl.replace(/\.git$/, ""),
-        defaultBranch: acquired.defaultBranch,
-        commitSha: acquired.commitSha,
-      });
-      const result = this.engine.analyze(model);
-      const intelligence = this.intelligence.analyze({
-        repositorySummary: model.summary,
-        modulesExecuted: result.modulesExecuted,
-        filesAnalyzed: result.filesAnalyzed,
-        findings: result.findings,
-        limitations: result.limitations,
-      });
+  public async executeInContext(
+    context: SharedExecutionContext,
+  ): Promise<void> {
+    context.recordResult(
+      this.analyzeModel(context.requestId, context.model),
+    );
+  }
 
-      return {
-        service: "security-audit",
-        status: "completed",
-        requestId: request.requestId,
-        repository: model.identity,
-        modulesExecuted: result.modulesExecuted,
-        filesAnalyzed: result.filesAnalyzed,
-        findings: intelligence.findings,
-        securityScore: intelligence.securityScore,
-        overallRiskRating: intelligence.overallRiskRating,
-        recommendedFixOrder: intelligence.recommendedFixOrder,
-        report: intelligence.report,
-        limitations: intelligence.report.limitations,
-      };
-    } finally {
-      await acquired.cleanup();
-    }
+  private analyzeModel(
+    requestId: string,
+    model: RepositoryModel,
+  ): SecurityAuditResponse {
+    const result = this.engine.analyze(model);
+    const intelligence = this.intelligence.analyze({
+      repositorySummary: model.summary,
+      modulesExecuted: result.modulesExecuted,
+      filesAnalyzed: result.filesAnalyzed,
+      findings: result.findings,
+      limitations: result.limitations,
+    });
+
+    return {
+      service: this.service,
+      status: "completed",
+      requestId,
+      repository: model.identity,
+      modulesExecuted: result.modulesExecuted,
+      filesAnalyzed: result.filesAnalyzed,
+      findings: intelligence.findings,
+      securityScore: intelligence.securityScore,
+      overallRiskRating: intelligence.overallRiskRating,
+      recommendedFixOrder: intelligence.recommendedFixOrder,
+      report: intelligence.report,
+      limitations: intelligence.report.limitations,
+    };
   }
 }

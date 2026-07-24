@@ -9,9 +9,9 @@ tool, a generic code generator, or a hackathon judging agent.
 
 ## Project status
 
-**Sprint 5: Root Cause Investigation Engine**
+**Sprint 6: Planner & Service Orchestration**
 
-Sprints 1 through 4 are approved. The repository now contains:
+Sprints 1 through 5 are approved. The repository now contains:
 
 - a Node.js and TypeScript pnpm workspace;
 - a modular Express API;
@@ -36,11 +36,17 @@ Sprints 1 through 4 are approved. The repository now contains:
   evidence-backed candidates;
 - structured impact, fix, prevention, related-file, related-dependency, and
   supporting-log output;
+- deterministic natural-language intent classification;
+- dependency-resolved execution plans and a registry-based service
+  orchestrator;
+- one shared Repository Model across multi-service requests;
+- unified repository, security, root-cause, risk, recommendation, and execution
+  metadata responses;
 - structured logging and persistent operational runtime state;
 - Docker, Railway, and GitHub Actions configuration.
 
-Conversational AI, multi-service orchestration, and external-model reasoning
-remain intentionally unimplemented.
+Conversational chat, external-model reasoning, and new A2MCP integrations remain
+intentionally unimplemented.
 
 Last documentation review: **July 24, 2026**
 
@@ -78,6 +84,21 @@ Sprint 5 uses deterministic signatures and repository correlation. It does not
 execute the repository, reproduce the failing system, or invent causes without
 supporting evidence.
 
+### Planner & Service Orchestration
+
+Given a natural-language request, repository URL, and optional logs, Adam:
+
+- classifies repository, security, root-cause, or combined intent;
+- generates a dependency-ordered execution plan;
+- clones and scans the repository once;
+- executes approved services against one shared Repository Model;
+- aggregates service outputs without changing their findings or scores;
+- returns one deterministic unified response with an execution timeline.
+
+Broad combined requests without logs run Repository Intelligence and Security
+Audit while documenting why Root Cause Investigation was omitted. Explicit
+failure investigations require logs and fail validation rather than guessing.
+
 ## Product principles
 
 - **Simple input:** users request an outcome, not a collection of analysis
@@ -101,20 +122,22 @@ flowchart LR
     Client["OnchainOS / OKX.AI client"]
     API["Adam HTTP boundary"]
     Planner["Internal planner"]
-    Workspace["Isolated ephemeral workspace"]
+    Classifier["Intent classifier"]
+    Plan["Execution planner"]
+    Workspace["Shared execution context"]
     RepositoryModel["Repository Model"]
-    Inspectors["Independent security inspectors"]
-    Intelligence["Security Intelligence Layer"]
-    Report["Scoring and structured report"]
+    Services["Approved service registry"]
+    Aggregate["Response aggregator"]
 
     Client -->|"A2MCP HTTP request"| API
-    API --> Planner
+    API --> Classifier
+    Classifier --> Plan
+    Plan --> Planner
     Planner --> Workspace
     Workspace --> RepositoryModel
-    RepositoryModel --> Inspectors
-    Inspectors --> Intelligence
-    Intelligence --> Report
-    Report --> API
+    RepositoryModel --> Services
+    Services --> Aggregate
+    Aggregate --> API
     API -->|"structured result"| Client
 ```
 
@@ -155,7 +178,8 @@ documentation and known ambiguities.
 ```
 
 Directories are introduced only when they contain working code or active
-documentation. External model adapters and Sprint 6 orchestration do not exist.
+documentation. External model adapters, chat modules, and new A2MCP adapters do
+not exist.
 
 ## Run locally
 
@@ -180,6 +204,7 @@ GET  /health
 POST /repository/summary
 POST /audit
 POST /investigate
+POST /plan
 ```
 
 `POST /repository/summary` accepts:
@@ -207,6 +232,25 @@ inline logs and returns a structured root-cause investigation.
   ]
 }
 ```
+
+`POST /plan` accepts:
+
+```json
+{
+  "request": "Audit this repository and explain why deployment failed",
+  "repositoryUrl": "https://github.com/onchaindc/Adam",
+  "logs": [
+    {
+      "source": "runtime",
+      "content": "Error: Cannot find module 'express'"
+    }
+  ]
+}
+```
+
+It returns the classification, execution plan, executed services, repository
+overview, optional security and root-cause results, overall risk,
+recommendations, and execution metadata.
 
 Run all repository checks:
 
@@ -245,11 +289,13 @@ deployment variable list.
    and structured findings.
 5. **Milestone 4:** complete and approved. Security Intelligence Layer, deterministic scoring,
    evidence-bound remediation, fix ordering, and structured reporting.
-6. **Milestone 5:** deterministic Root Cause Investigation pipeline, ranked
+6. **Milestone 5:** complete and approved. Deterministic Root Cause Investigation pipeline, ranked
    causes, evidence, fixes, prevention, and production endpoint.
-7. **Milestone 6:** harden isolation, observability, reliability, and Railway
+7. **Milestone 6:** deterministic Planner, shared execution context,
+   dependency-ordered orchestration, and unified response.
+8. **Milestone 7:** harden isolation, observability, reliability, and Railway
    deployment.
-8. **Milestone 7:** register, validate, and publish the ASP service in OKX.AI.
+9. **Milestone 8:** register, validate, and publish the ASP service in OKX.AI.
 
 Each milestone requires review before the next milestone begins.
 

@@ -2,11 +2,11 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Sprints 0-4 approved; Sprint 5 implemented pending review |
-| Version | 0.5 |
+| Status | Sprints 0-5 approved; Sprint 6 implemented pending review |
+| Version | 0.6 |
 | Last reviewed | July 24, 2026 |
-| Scope | Architecture through Root Cause Investigation |
-| Implementation status | Repository intelligence, security analysis, deterministic scoring, reporting, and root-cause investigation exist |
+| Scope | Architecture through Planner and Service Orchestration |
+| Implementation status | Repository intelligence, security analysis, root-cause investigation, deterministic planning, shared context, orchestration, and unified aggregation exist |
 
 ## 1. Purpose
 
@@ -963,6 +963,24 @@ application.
   complete.
 - Production `POST /investigate` endpoint and cleanup guarantees: complete.
 - Conversational AI, Planner Intelligence, and multi-service orchestration:
+  were intentionally deferred from Sprint 5.
+
+### Sprint 6 implementation status
+
+- Deterministic natural-language intent classification: complete.
+- Repository, Security Audit, Root Cause, and combined intent support:
+  complete.
+- Dependency-resolved execution plan generation: complete.
+- Registry-based Service Orchestrator: complete.
+- Shared request-scoped Repository Model and execution context: complete.
+- Single repository acquisition across multi-service plans: complete.
+- Planner decisions and execution timeline: complete.
+- Unified repository, security, root-cause, risk, and recommendation response:
+  complete.
+- Production `POST /plan` endpoint: complete.
+- Security Audit Engine, Security Score, and Root Cause Engine algorithms:
+  unchanged.
+- Conversational chat, external LLM providers, and new A2MCP integrations:
   intentionally not implemented.
 
-The project stops for review after Sprint 5.
+The project stops for review after Sprint 6.

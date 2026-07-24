@@ -271,7 +271,86 @@ export interface RootCauseInvestigationResponse {
   readonly limitations: readonly string[];
 }
 
+export type PlannerIntent =
+  | "repository-analysis"
+  | "security-audit"
+  | "root-cause-investigation"
+  | "combined-analysis";
+
+export interface PlannerIntentClassification {
+  readonly intent: PlannerIntent;
+  readonly confidence: DetectionConfidence;
+  readonly matchedSignals: readonly string[];
+  readonly rationale: string;
+}
+
+export interface PlannerExecutionStep {
+  readonly order: number;
+  readonly service: ServiceKind;
+  readonly prerequisites: readonly ServiceKind[];
+  readonly reason: string;
+}
+
+export interface PlannerOmittedService {
+  readonly service: ServiceKind;
+  readonly reason: string;
+}
+
+export interface PlannerExecutionPlan {
+  readonly intent: PlannerIntent;
+  readonly steps: readonly PlannerExecutionStep[];
+  readonly omittedServices: readonly PlannerOmittedService[];
+}
+
+export interface PlannerDecisionRecord {
+  readonly stage: "intent-classification" | "execution-planning";
+  readonly decision: string;
+  readonly rationale: string;
+}
+
+export interface PlannerTimelineEntry {
+  readonly service: ServiceKind;
+  readonly status: "completed" | "failed";
+  readonly startedAt: string;
+  readonly completedAt: string;
+  readonly durationMs: number;
+}
+
+export interface PlannerUnifiedResponse {
+  readonly service: "planner";
+  readonly status: "completed";
+  readonly requestId: string;
+  readonly requestSummary: {
+    readonly request: string;
+    readonly intent: PlannerIntent;
+    readonly confidence: DetectionConfidence;
+  };
+  readonly plannerDecision: {
+    readonly classification: PlannerIntentClassification;
+    readonly executionPlan: PlannerExecutionPlan;
+    readonly decisions: readonly PlannerDecisionRecord[];
+  };
+  readonly servicesExecuted: readonly ServiceKind[];
+  readonly repositoryOverview: RepositorySummary;
+  readonly securityAssessment: SecurityAuditResponse | null;
+  readonly rootCauseInvestigation: RootCauseInvestigationResponse | null;
+  readonly overallRisk: {
+    readonly rating: SecuritySeverity | "not-assessed";
+    readonly basis: string;
+  };
+  readonly overallRecommendations: readonly string[];
+  readonly executionMetadata: {
+    readonly startedAt: string;
+    readonly completedAt: string;
+    readonly durationMs: number;
+    readonly timeline: readonly PlannerTimelineEntry[];
+    readonly sharedRepositoryModel: true;
+    readonly repositoryAcquisitions: 1;
+  };
+}
+
 export type ServiceResponse =
   | RepositoryIntelligenceResponse
   | SecurityAuditResponse
-  | RootCauseInvestigationResponse;
+  | RootCauseInvestigationResponse
+  | PlannerUnifiedResponse;

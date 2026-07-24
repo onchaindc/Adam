@@ -4,7 +4,7 @@ import type {
   ServiceKind,
 } from "@adam/contracts";
 
-import type { AdamService } from "./placeholder-services.js";
+import type { AdamService } from "./adam-service.js";
 
 export interface ServiceDispatcher {
   dispatch(

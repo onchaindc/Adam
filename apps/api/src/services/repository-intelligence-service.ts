@@ -4,14 +4,18 @@ import type {
 } from "@adam/contracts";
 
 import type { RepositoryScanner } from "../investigation/repository/repository-scanner.js";
+import type { SharedExecutionContext } from "../planner/shared-execution-context.js";
 import type { GitHubRepositoryAcquirer } from "../platform/github/github-repository.js";
-import type { AdamService } from "./placeholder-services.js";
+import type { AdamService } from "./adam-service.js";
+import { withRepositoryModel } from "./repository-model-execution.js";
 
 interface RepositoryIntelligenceInput {
   readonly repositoryUrl: string;
 }
 
 export class RepositoryIntelligenceService implements AdamService {
+  public readonly service = "repository-intelligence" as const;
+
   public constructor(
     private readonly acquirer: GitHubRepositoryAcquirer,
     private readonly scanner: RepositoryScanner,
@@ -21,25 +25,31 @@ export class RepositoryIntelligenceService implements AdamService {
     request: ServiceRequest,
   ): Promise<RepositoryIntelligenceResponse> {
     const input = request.input as RepositoryIntelligenceInput;
-    const acquired = await this.acquirer.acquire(input.repositoryUrl);
+    return withRepositoryModel(
+      this.acquirer,
+      this.scanner,
+      input.repositoryUrl,
+      (model) => this.buildResponse(request.requestId, model.summary),
+    );
+  }
 
-    try {
-      const model = await this.scanner.scan(acquired.directory, {
-        name: acquired.reference.name,
-        owner: acquired.reference.owner,
-        url: acquired.reference.canonicalUrl.replace(/\.git$/, ""),
-        defaultBranch: acquired.defaultBranch,
-        commitSha: acquired.commitSha,
-      });
+  public async executeInContext(
+    context: SharedExecutionContext,
+  ): Promise<void> {
+    context.recordResult(
+      this.buildResponse(context.requestId, context.model.summary),
+    );
+  }
 
-      return {
-        service: "repository-intelligence",
-        status: "completed",
-        requestId: request.requestId,
-        summary: model.summary,
-      };
-    } finally {
-      await acquired.cleanup();
-    }
+  private buildResponse(
+    requestId: string,
+    summary: RepositoryIntelligenceResponse["summary"],
+  ): RepositoryIntelligenceResponse {
+    return {
+      service: this.service,
+      status: "completed",
+      requestId,
+      summary,
+    };
   }
 }

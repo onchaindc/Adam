@@ -2,6 +2,7 @@ import type { ErrorRequestHandler } from "express";
 import type { Logger } from "pino";
 
 import { RepositoryIntelligenceError } from "../../investigation/repository/errors.js";
+import { PlannerInputError } from "../../planner/errors.js";
 
 export function createErrorHandler(logger: Logger): ErrorRequestHandler {
   return (error: unknown, request, response, _next) => {
@@ -23,6 +24,15 @@ export function createErrorHandler(logger: Logger): ErrorRequestHandler {
             ? 422
             : 502;
       response.status(status).json({
+        error: error.code,
+        requestId: request.requestId,
+        message: error.message,
+      });
+      return;
+    }
+
+    if (error instanceof PlannerInputError) {
+      response.status(400).json({
         error: error.code,
         requestId: request.requestId,
         message: error.message,

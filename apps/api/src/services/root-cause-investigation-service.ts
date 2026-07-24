@@ -3,12 +3,15 @@ import type {
   ServiceRequest,
 } from "@adam/contracts";
 
+import type { RepositoryModel } from "../investigation/repository/model.js";
 import type { RepositoryScanner } from "../investigation/repository/repository-scanner.js";
 import type { RootCauseEngine } from "../investigation/root-cause/root-cause-engine.js";
 import type { InvestigationLogInput } from "../investigation/root-cause/types.js";
+import type { SharedExecutionContext } from "../planner/shared-execution-context.js";
 import type { GitHubRepositoryAcquirer } from "../platform/github/github-repository.js";
 import { buildInvestigationResponse } from "../reporting/root-cause/investigation-report-builder.js";
-import type { AdamService } from "./placeholder-services.js";
+import type { AdamService } from "./adam-service.js";
+import { withRepositoryModel } from "./repository-model-execution.js";
 
 interface RootCauseInvestigationInput {
   readonly repositoryUrl: string;
@@ -16,6 +19,8 @@ interface RootCauseInvestigationInput {
 }
 
 export class RootCauseInvestigationService implements AdamService {
+  public readonly service = "root-cause-investigation" as const;
+
   public constructor(
     private readonly acquirer: GitHubRepositoryAcquirer,
     private readonly scanner: RepositoryScanner,
@@ -26,27 +31,40 @@ export class RootCauseInvestigationService implements AdamService {
     request: ServiceRequest,
   ): Promise<RootCauseInvestigationResponse> {
     const input = request.input as RootCauseInvestigationInput;
-    const acquired = await this.acquirer.acquire(input.repositoryUrl);
+    return withRepositoryModel(
+      this.acquirer,
+      this.scanner,
+      input.repositoryUrl,
+      (model) =>
+        this.investigateModel(request.requestId, model, input.logs),
+    );
+  }
 
-    try {
-      const model = await this.scanner.scan(acquired.directory, {
-        name: acquired.reference.name,
-        owner: acquired.reference.owner,
-        url: acquired.reference.canonicalUrl.replace(/\.git$/, ""),
-        defaultBranch: acquired.defaultBranch,
-        commitSha: acquired.commitSha,
-      });
-      const result = this.engine.investigate(model, input.logs);
+  public async executeInContext(
+    context: SharedExecutionContext,
+  ): Promise<void> {
+    context.recordResult(
+      this.investigateModel(
+        context.requestId,
+        context.model,
+        context.logs,
+      ),
+    );
+  }
 
-      return buildInvestigationResponse({
-        requestId: request.requestId,
-        model,
-        candidate: result.candidate,
-        entries: result.entries,
-        limitations: result.limitations,
-      });
-    } finally {
-      await acquired.cleanup();
-    }
+  private investigateModel(
+    requestId: string,
+    model: RepositoryModel,
+    logs: readonly InvestigationLogInput[],
+  ): RootCauseInvestigationResponse {
+    const result = this.engine.investigate(model, logs);
+
+    return buildInvestigationResponse({
+      requestId,
+      model,
+      candidate: result.candidate,
+      entries: result.entries,
+      limitations: result.limitations,
+    });
   }
 }
