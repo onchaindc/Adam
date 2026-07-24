@@ -28,6 +28,9 @@ REPOSITORY_MAX_FILES=10000
 REPOSITORY_MAX_DEPTH=25
 REPOSITORY_MAX_FILE_BYTES=512000
 REPOSITORY_MAX_TOTAL_SOURCE_BYTES=10000000
+INVESTIGATION_MAX_LOG_INPUTS=20
+INVESTIGATION_MAX_LOG_BYTES=200000
+INVESTIGATION_MAX_LOG_LINES=5000
 ```
 
 Railway injects `PORT`; do not hardcode it.
@@ -48,4 +51,5 @@ After deployment, verify:
    repository.
 4. `POST /audit` returns HTTP 200 with enriched findings, a versioned security
    score, recommended fix order, and structured report.
-5. `POST /investigate` returns the documented HTTP 501 placeholder response.
+5. `POST /investigate` returns HTTP 200 with a structured, evidence-backed
+   investigation result for a valid public repository and bounded logs.

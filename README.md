@@ -9,9 +9,9 @@ tool, a generic code generator, or a hackathon judging agent.
 
 ## Project status
 
-**Sprint 4: Security Intelligence Layer**
+**Sprint 5: Root Cause Investigation Engine**
 
-Sprints 1 through 3 are approved. The repository now contains:
+Sprints 1 through 4 are approved. The repository now contains:
 
 - a Node.js and TypeScript pnpm workspace;
 - a modular Express API;
@@ -30,11 +30,17 @@ Sprints 1 through 3 are approved. The repository now contains:
 - deterministic versioned security scoring by category;
 - overall risk ratings and recommended fix ordering;
 - a professional structured Security Report;
+- a deterministic Root Cause Investigation pipeline for repository and log
+  correlation;
+- independent, extensible root-cause detector categories with ranked
+  evidence-backed candidates;
+- structured impact, fix, prevention, related-file, related-dependency, and
+  supporting-log output;
 - structured logging and persistent operational runtime state;
 - Docker, Railway, and GitHub Actions configuration.
 
-Root Cause Investigation and external-model reasoning remain intentionally
-unimplemented.
+Conversational AI, multi-service orchestration, and external-model reasoning
+remain intentionally unimplemented.
 
 Last documentation review: **July 24, 2026**
 
@@ -59,13 +65,18 @@ repository evidence to an external model or claim runtime exploitability.
 
 ### Root Cause Investigation
 
-Given a public GitHub repository and deployment, runtime, or CI logs, Adam will:
+Given a public GitHub repository and deployment, runtime, CI, stack-trace, or
+error logs, Adam:
 
 - understand the relevant repository structure;
 - normalize and correlate failures across code, configuration, and logs;
 - identify the most probable root cause;
 - state confidence and supporting evidence;
 - recommend a fix and prevention measures.
+
+Sprint 5 uses deterministic signatures and repository correlation. It does not
+execute the repository, reproduce the failing system, or invent causes without
+supporting evidence.
 
 ## Product principles
 
@@ -144,8 +155,7 @@ documentation and known ambiguities.
 ```
 
 Directories are introduced only when they contain working code or active
-documentation. Root Cause Investigation and external model adapters do not
-exist yet.
+documentation. External model adapters and Sprint 6 orchestration do not exist.
 
 ## Run locally
 
@@ -182,7 +192,21 @@ POST /investigate
 
 It returns a structured repository summary. `POST /audit` accepts the same
 request and returns enriched findings, scoring, fix order, and a structured
-Security Report. `/investigate` continues to return HTTP 501 placeholder JSON.
+Security Report. `POST /investigate` accepts a repository URL plus bounded
+inline logs and returns a structured root-cause investigation.
+
+```json
+{
+  "repositoryUrl": "https://github.com/onchaindc/Adam",
+  "logs": [
+    {
+      "source": "build",
+      "label": "Railway build",
+      "content": "Error: Cannot find module 'express'"
+    }
+  ]
+}
+```
 
 Run all repository checks:
 
@@ -219,9 +243,10 @@ deployment variable list.
    Repository Model, file-tree scanning, and stack detection.
 4. **Milestone 3:** complete and approved. Deterministic Security Audit Engine
    and structured findings.
-5. **Milestone 4:** Security Intelligence Layer, deterministic scoring,
+5. **Milestone 4:** complete and approved. Security Intelligence Layer, deterministic scoring,
    evidence-bound remediation, fix ordering, and structured reporting.
-6. **Milestone 5:** deliver one bounded Root Cause Investigation vertical slice.
+6. **Milestone 5:** deterministic Root Cause Investigation pipeline, ranked
+   causes, evidence, fixes, prevention, and production endpoint.
 7. **Milestone 6:** harden isolation, observability, reliability, and Railway
    deployment.
 8. **Milestone 7:** register, validate, and publish the ASP service in OKX.AI.

@@ -2,11 +2,11 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Sprints 0-3 approved; Sprint 4 implemented pending review |
-| Version | 0.4 |
+| Status | Sprints 0-4 approved; Sprint 5 implemented pending review |
+| Version | 0.5 |
 | Last reviewed | July 24, 2026 |
-| Scope | Architecture through Security Intelligence |
-| Implementation status | Repository intelligence, security analysis, deterministic scoring, and structured reporting exist |
+| Scope | Architecture through Root Cause Investigation |
+| Implementation status | Repository intelligence, security analysis, deterministic scoring, reporting, and root-cause investigation exist |
 
 ## 1. Purpose
 
@@ -932,7 +932,8 @@ application.
 - Structured `POST /audit` response: complete.
 - Secret evidence redaction and workspace cleanup: complete.
 - Security scores, remediation generation, narrative reports, AI reasoning, and
-  Root Cause Investigation: intentionally not implemented.
+  Root Cause Investigation were deferred from Sprint 3; approved scoring and
+  investigation capabilities are implemented in Sprints 4 and 5.
 
 ### Sprint 4 implementation status
 
@@ -945,6 +946,23 @@ application.
 - Structured professional Security Report: complete.
 - External model provider: intentionally not introduced because provider and
   data-processing policy remain unapproved.
-- Root Cause Investigation: intentionally not implemented.
+- Root Cause Investigation was deferred from Sprint 4 and is implemented
+  independently in Sprint 5.
 
-The project stops for review after Sprint 4.
+### Sprint 5 implementation status
+
+- Public GitHub repository plus bounded inline log input: complete.
+- Build, runtime, CI, stack-trace, and error-message normalization: complete.
+- Secret redaction and stable supporting log entry IDs: complete.
+- Repository, file, dependency, configuration, and stack correlation: complete.
+- Extensible detector registry covering all approved root-cause categories:
+  complete.
+- Candidate scoring, ranking, confidence, evidence, impact, recommended fixes,
+  and prevention: complete.
+- Conditional smart-contract deployment detection for Solidity repositories:
+  complete.
+- Production `POST /investigate` endpoint and cleanup guarantees: complete.
+- Conversational AI, Planner Intelligence, and multi-service orchestration:
+  intentionally not implemented.
+
+The project stops for review after Sprint 5.

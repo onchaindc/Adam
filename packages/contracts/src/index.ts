@@ -16,13 +16,6 @@ export interface ServiceRequest {
   readonly input: unknown;
 }
 
-export interface PlaceholderServiceResponse {
-  readonly service: "root-cause-investigation";
-  readonly status: "not-implemented";
-  readonly requestId: string;
-  readonly message: string;
-}
-
 export type DetectionConfidence = "high" | "medium" | "low";
 
 export interface StackDetection {
@@ -202,7 +195,83 @@ export interface SecurityAuditResponse {
   readonly limitations: readonly string[];
 }
 
+export type InvestigationLogSource =
+  | "build"
+  | "runtime"
+  | "ci"
+  | "stack-trace"
+  | "error-message";
+
+export type RootCauseCategory =
+  | "dependency-failure"
+  | "missing-environment-variable"
+  | "configuration-mistake"
+  | "build-failure"
+  | "runtime-exception"
+  | "module-resolution"
+  | "version-incompatibility"
+  | "deployment-failure"
+  | "authentication-failure"
+  | "database-connection-failure"
+  | "api-integration-failure"
+  | "smart-contract-deployment-failure"
+  | "undetermined";
+
+export interface InvestigationConfidence {
+  readonly score: number;
+  readonly level: DetectionConfidence;
+}
+
+export interface InvestigationEvidence {
+  readonly id: string;
+  readonly type: "log-entry" | "repository-file" | "dependency" | "stack";
+  readonly source: string;
+  readonly reference: string;
+  readonly excerpt: string;
+}
+
+export interface SupportingLogEntry {
+  readonly id: string;
+  readonly source: InvestigationLogSource;
+  readonly label: string | null;
+  readonly line: number;
+  readonly timestamp: string | null;
+  readonly text: string;
+}
+
+export interface RootCauseInvestigationResponse {
+  readonly service: "root-cause-investigation";
+  readonly status: "completed";
+  readonly requestId: string;
+  readonly investigationId: string;
+  readonly repository: RepositorySummary["repository"];
+  readonly rootCause: {
+    readonly category: RootCauseCategory;
+    readonly title: string;
+    readonly summary: string;
+  };
+  readonly confidence: InvestigationConfidence;
+  readonly evidence: readonly InvestigationEvidence[];
+  readonly impact: string;
+  readonly recommendedFixes: readonly string[];
+  readonly prevention: readonly string[];
+  readonly relatedFiles: readonly string[];
+  readonly relatedDependencies: readonly string[];
+  readonly supportingLogEntries: readonly SupportingLogEntry[];
+  readonly pipeline: readonly [
+    "receive-inputs",
+    "normalize-logs",
+    "identify-error-signals",
+    "correlate-repository-context",
+    "generate-candidate-causes",
+    "rank-causes",
+    "select-most-probable-cause",
+    "produce-investigation-result",
+  ];
+  readonly limitations: readonly string[];
+}
+
 export type ServiceResponse =
-  | PlaceholderServiceResponse
   | RepositoryIntelligenceResponse
-  | SecurityAuditResponse;
+  | SecurityAuditResponse
+  | RootCauseInvestigationResponse;

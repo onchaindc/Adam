@@ -7,7 +7,7 @@ import { createApp } from "../dist/app.js";
 import { loadEnvironment } from "../dist/config/environment.js";
 
 describe("HTTP routes", () => {
-  it("serves health and placeholder service responses", async () => {
+  it("serves health and implemented service responses", async () => {
     const dispatcher = {
       async dispatch(service, request) {
         if (service === "security-audit") {
@@ -118,10 +118,41 @@ describe("HTTP routes", () => {
         }
 
         return {
-          service,
-          status: "not-implemented",
+          service: "root-cause-investigation",
+          status: "completed",
           requestId: request.requestId,
-          message: "placeholder",
+          investigationId: `ADAM-RCI-${request.requestId}`,
+          repository: {
+            name: "Adam",
+            owner: "onchaindc",
+            url: "https://github.com/onchaindc/Adam",
+            defaultBranch: "main",
+            commitSha: "abc123",
+          },
+          rootCause: {
+            category: "module-resolution",
+            title: "Module resolution failed",
+            summary: "A required module could not be resolved.",
+          },
+          confidence: { score: 90, level: "high" },
+          evidence: [],
+          impact: "The application cannot start.",
+          recommendedFixes: ["Install the declared dependency."],
+          prevention: ["Run clean builds in CI."],
+          relatedFiles: ["apps/api/src/server.ts"],
+          relatedDependencies: ["express"],
+          supportingLogEntries: [],
+          pipeline: [
+            "receive-inputs",
+            "normalize-logs",
+            "identify-error-signals",
+            "correlate-repository-context",
+            "generate-candidate-causes",
+            "rank-causes",
+            "select-most-probable-cause",
+            "produce-investigation-result",
+          ],
+          limitations: [],
         };
       },
     };
@@ -168,6 +199,28 @@ describe("HTTP routes", () => {
           body: JSON.stringify({}),
         },
       );
+      const investigation = await fetch(`${baseUrl}/investigate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          repositoryUrl: "https://github.com/onchaindc/Adam",
+          logs: [
+            {
+              source: "build",
+              label: "CI build",
+              content: "Cannot find module 'express'",
+            },
+          ],
+        }),
+      });
+      const invalidInvestigation = await fetch(`${baseUrl}/investigate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          repositoryUrl: "https://github.com/onchaindc/Adam",
+          logs: [],
+        }),
+      });
 
       assert.equal(health.status, 200);
       assert.deepEqual(
@@ -262,6 +315,12 @@ describe("HTTP routes", () => {
       assert.equal(repositorySummary.status, 200);
       assert.equal((await repositorySummary.json()).status, "completed");
       assert.equal(invalidRepositorySummary.status, 400);
+      assert.equal(investigation.status, 200);
+      assert.equal(
+        (await investigation.json()).rootCause.category,
+        "module-resolution",
+      );
+      assert.equal(invalidInvestigation.status, 400);
     } finally {
       await new Promise((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));

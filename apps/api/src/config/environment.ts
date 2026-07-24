@@ -41,6 +41,24 @@ const environmentSchema = z
       .min(1_024)
       .max(100_000_000)
       .default(10_000_000),
+    INVESTIGATION_MAX_LOG_INPUTS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(20),
+    INVESTIGATION_MAX_LOG_BYTES: z.coerce
+      .number()
+      .int()
+      .min(1_024)
+      .max(1_000_000)
+      .default(200_000),
+    INVESTIGATION_MAX_LOG_LINES: z.coerce
+      .number()
+      .int()
+      .min(10)
+      .max(50_000)
+      .default(5_000),
   });
 
 export type Environment = z.infer<typeof environmentSchema>;

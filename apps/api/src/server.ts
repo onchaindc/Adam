@@ -11,11 +11,17 @@ import { createApp } from "./app.js";
 import { loadEnvironment } from "./config/environment.js";
 import { SecurityIntelligenceEngine } from "./intelligence/security/security-intelligence-engine.js";
 import { RepositoryScanner } from "./investigation/repository/repository-scanner.js";
+import { ConfigurationCauseDetector } from "./investigation/root-cause/detectors/configuration-cause-detector.js";
+import { DependencyCauseDetector } from "./investigation/root-cause/detectors/dependency-cause-detector.js";
+import { ExecutionCauseDetector } from "./investigation/root-cause/detectors/execution-cause-detector.js";
+import { SmartContractCauseDetector } from "./investigation/root-cause/detectors/smart-contract-cause-detector.js";
+import { LogNormalizer } from "./investigation/root-cause/log-normalizer.js";
+import { RootCauseEngine } from "./investigation/root-cause/root-cause-engine.js";
 import { createLogger } from "./logging/logger.js";
 import { GitHubRepositoryAcquirer } from "./platform/github/github-repository.js";
 import { FileRuntimeStateStore } from "./platform/state/runtime-state.js";
-import { RootCauseInvestigationPlaceholderService } from "./services/placeholder-services.js";
 import { RepositoryIntelligenceService } from "./services/repository-intelligence-service.js";
+import { RootCauseInvestigationService } from "./services/root-cause-investigation-service.js";
 import { SecurityAuditService } from "./services/security-audit-service.js";
 import { DefaultServiceDispatcher } from "./services/service-dispatcher.js";
 
@@ -49,10 +55,23 @@ const securityAuditService = new SecurityAuditService(
   ]),
   new SecurityIntelligenceEngine(),
 );
+const rootCauseInvestigationService = new RootCauseInvestigationService(
+  repositoryAcquirer,
+  repositoryScanner,
+  new RootCauseEngine(
+    new LogNormalizer(environment.INVESTIGATION_MAX_LOG_LINES),
+    [
+      new DependencyCauseDetector(),
+      new ConfigurationCauseDetector(),
+      new ExecutionCauseDetector(),
+      new SmartContractCauseDetector(),
+    ],
+  ),
+);
 const dispatcher = new DefaultServiceDispatcher({
   "repository-intelligence": repositoryIntelligenceService,
   "security-audit": securityAuditService,
-  "root-cause-investigation": new RootCauseInvestigationPlaceholderService(),
+  "root-cause-investigation": rootCauseInvestigationService,
 });
 const app = createApp({
   dispatcher,
