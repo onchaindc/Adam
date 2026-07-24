@@ -9,6 +9,7 @@ import { SmartContractInspector } from "./analyzers/security/smart-contract-insp
 import { StaticSecurityPatternInspector } from "./analyzers/security/static-security-pattern-inspector.js";
 import { createApp } from "./app.js";
 import { loadEnvironment } from "./config/environment.js";
+import { SecurityIntelligenceEngine } from "./intelligence/security/security-intelligence-engine.js";
 import { RepositoryScanner } from "./investigation/repository/repository-scanner.js";
 import { createLogger } from "./logging/logger.js";
 import { GitHubRepositoryAcquirer } from "./platform/github/github-repository.js";
@@ -46,6 +47,7 @@ const securityAuditService = new SecurityAuditService(
     new StaticSecurityPatternInspector(),
     new SmartContractInspector(),
   ]),
+  new SecurityIntelligenceEngine(),
 );
 const dispatcher = new DefaultServiceDispatcher({
   "repository-intelligence": repositoryIntelligenceService,

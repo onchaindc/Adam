@@ -102,6 +102,91 @@ export interface SecurityFinding {
   readonly confidence: DetectionConfidence;
 }
 
+export type SecurityLikelihood = "high" | "medium" | "low";
+
+export type SecurityScoreCategory =
+  | "authentication"
+  | "authorization"
+  | "dependencies"
+  | "secrets"
+  | "configuration"
+  | "application-security"
+  | "smart-contracts";
+
+export interface SecurityFindingIntelligence {
+  readonly explanation: string;
+  readonly whyItMatters: string;
+  readonly potentialImpact: string;
+  readonly likelihood: SecurityLikelihood;
+  readonly suggestedRemediation: string;
+  readonly confidenceLevel: DetectionConfidence;
+  readonly evidenceReferences: readonly string[];
+}
+
+export interface IntelligentSecurityFinding extends SecurityFinding {
+  readonly intelligence: SecurityFindingIntelligence;
+}
+
+export interface SecurityScoreDeduction {
+  readonly findingId: string;
+  readonly points: number;
+}
+
+export interface SecurityCategoryScore {
+  readonly category: SecurityScoreCategory;
+  readonly score: number;
+  readonly riskRating: SecuritySeverity;
+  readonly findingCount: number;
+  readonly deductions: readonly SecurityScoreDeduction[];
+}
+
+export interface SecurityScore {
+  readonly value: number;
+  readonly maximum: 100;
+  readonly scoringVersion: "1.0";
+  readonly riskRating: SecuritySeverity;
+  readonly categoryScores: readonly SecurityCategoryScore[];
+}
+
+export interface RecommendedSecurityFix {
+  readonly priority: number;
+  readonly findingId: string;
+  readonly title: string;
+  readonly severity: SecuritySeverity;
+  readonly rationale: string;
+  readonly suggestedRemediation: string;
+}
+
+export interface SecurityReport {
+  readonly schemaVersion: "1.0";
+  readonly repositoryOverview: {
+    readonly repository: RepositorySummary["repository"];
+    readonly filesAnalyzed: number;
+    readonly dockerDetected: boolean;
+    readonly ciCdDetected: boolean;
+    readonly smartContractsDetected: boolean;
+  };
+  readonly technologyStack: {
+    readonly languages: readonly RepositoryLanguage[];
+    readonly frameworks: readonly StackDetection[];
+    readonly packageManager: StackDetection | null;
+  };
+  readonly securityScore: SecurityScore;
+  readonly overallRiskRating: SecuritySeverity;
+  readonly criticalFindings: readonly IntelligentSecurityFinding[];
+  readonly highFindings: readonly IntelligentSecurityFinding[];
+  readonly mediumFindings: readonly IntelligentSecurityFinding[];
+  readonly lowFindings: readonly IntelligentSecurityFinding[];
+  readonly recommendedFixOrder: readonly RecommendedSecurityFix[];
+  readonly securitySummary: {
+    readonly overview: string;
+    readonly findingCounts: Readonly<Record<SecuritySeverity, number>>;
+    readonly highestPriorityFindingIds: readonly string[];
+    readonly evidenceBased: true;
+  };
+  readonly limitations: readonly string[];
+}
+
 export interface SecurityAuditResponse {
   readonly service: "security-audit";
   readonly status: "completed";
@@ -109,7 +194,11 @@ export interface SecurityAuditResponse {
   readonly repository: RepositorySummary["repository"];
   readonly modulesExecuted: readonly SecurityFindingCategory[];
   readonly filesAnalyzed: number;
-  readonly findings: readonly SecurityFinding[];
+  readonly findings: readonly IntelligentSecurityFinding[];
+  readonly securityScore: SecurityScore;
+  readonly overallRiskRating: SecuritySeverity;
+  readonly recommendedFixOrder: readonly RecommendedSecurityFix[];
+  readonly report: SecurityReport;
   readonly limitations: readonly string[];
 }
 

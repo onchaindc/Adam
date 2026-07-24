@@ -46,5 +46,6 @@ After deployment, verify:
 2. `GET /health` returns HTTP 200.
 3. `POST /repository/summary` returns HTTP 200 for a small public GitHub
    repository.
-4. `POST /audit` returns HTTP 200 with structured findings.
+4. `POST /audit` returns HTTP 200 with enriched findings, a versioned security
+   score, recommended fix order, and structured report.
 5. `POST /investigate` returns the documented HTTP 501 placeholder response.

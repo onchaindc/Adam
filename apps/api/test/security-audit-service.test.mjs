@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { SecurityIntelligenceEngine } from "../dist/intelligence/security/security-intelligence-engine.js";
 import { SecurityAuditService } from "../dist/services/security-audit-service.js";
 
 describe("SecurityAuditService", () => {
@@ -53,6 +54,7 @@ describe("SecurityAuditService", () => {
           };
         },
       },
+      new SecurityIntelligenceEngine(),
     );
 
     const response = await service.execute({
@@ -62,6 +64,9 @@ describe("SecurityAuditService", () => {
 
     assert.equal(response.status, "completed");
     assert.equal(response.findings.length, 1);
+    assert.equal(response.findings[0].intelligence.evidenceReferences[0], "ADAM-SEC-0001");
+    assert.equal(response.securityScore.value < 100, true);
+    assert.equal(response.report.highFindings.length, 1);
     assert.equal(cleaned, true);
   });
 
@@ -95,6 +100,7 @@ describe("SecurityAuditService", () => {
           throw new Error("analysis failed");
         },
       },
+      new SecurityIntelligenceEngine(),
     );
 
     await assert.rejects(

@@ -2,11 +2,11 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Sprint 0 approved; Sprint 1 implemented pending review |
-| Version | 0.2 |
-| Last reviewed | July 22, 2026 |
-| Scope | Architecture plus Sprint 1 foundation |
-| Implementation status | Runtime foundation exists; investigation logic does not |
+| Status | Sprints 0-3 approved; Sprint 4 implemented pending review |
+| Version | 0.4 |
+| Last reviewed | July 24, 2026 |
+| Scope | Architecture through Security Intelligence |
+| Implementation status | Repository intelligence, security analysis, deterministic scoring, and structured reporting exist |
 
 ## 1. Purpose
 
@@ -934,4 +934,17 @@ application.
 - Security scores, remediation generation, narrative reports, AI reasoning, and
   Root Cause Investigation: intentionally not implemented.
 
-The project stops for review after Sprint 3.
+### Sprint 4 implementation status
+
+- Rule-aware Security Intelligence Layer: complete.
+- Evidence-referenced explanation, importance, impact, likelihood,
+  remediation, and confidence for every finding: complete.
+- Deterministic category scoring with versioned formula: complete.
+- Overall score and risk rating: complete.
+- Recommended fix ordering: complete.
+- Structured professional Security Report: complete.
+- External model provider: intentionally not introduced because provider and
+  data-processing policy remain unapproved.
+- Root Cause Investigation: intentionally not implemented.
+
+The project stops for review after Sprint 4.

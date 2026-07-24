@@ -9,9 +9,9 @@ tool, a generic code generator, or a hackathon judging agent.
 
 ## Project status
 
-**Sprint 3: Security Audit Engine**
+**Sprint 4: Security Intelligence Layer**
 
-Sprints 1 and 2 are approved. The repository now contains:
+Sprints 1 through 3 are approved. The repository now contains:
 
 - a Node.js and TypeScript pnpm workspace;
 - a modular Express API;
@@ -25,13 +25,18 @@ Sprints 1 and 2 are approved. The repository now contains:
   configuration, static-pattern, and Solidity inspectors;
 - deterministic structured security findings with severity, evidence,
   file/line, and confidence;
+- rule-aware explanations, impact analysis, likelihood, remediation, and
+  evidence references for every finding;
+- deterministic versioned security scoring by category;
+- overall risk ratings and recommended fix ordering;
+- a professional structured Security Report;
 - structured logging and persistent operational runtime state;
 - Docker, Railway, and GitHub Actions configuration.
 
-Root cause reasoning, AI reasoning, security scoring, remediation generation,
-and report generation remain intentionally unimplemented.
+Root Cause Investigation and external-model reasoning remain intentionally
+unimplemented.
 
-Last documentation review: **July 23, 2026**
+Last documentation review: **July 24, 2026**
 
 ## Initial services
 
@@ -44,10 +49,13 @@ Given a public GitHub repository, Adam:
   authorization;
 - inspect smart contracts when present;
 - detect deterministic static security patterns;
-- return severity-ranked structured findings with evidence and confidence.
+- explain every finding using its recorded evidence;
+- calculate transparent category and overall security scores;
+- return severity-grouped findings, a recommended fix order, and a structured
+  professional report.
 
-Sprint 3 does not generate a score, remediation, narrative explanation, or
-model-derived conclusion.
+Sprint 4 intelligence is deterministic and rule-aware. It does not send
+repository evidence to an external model or claim runtime exploitability.
 
 ### Root Cause Investigation
 
@@ -85,13 +93,17 @@ flowchart LR
     Workspace["Isolated ephemeral workspace"]
     RepositoryModel["Repository Model"]
     Inspectors["Independent security inspectors"]
+    Intelligence["Security Intelligence Layer"]
+    Report["Scoring and structured report"]
 
     Client -->|"A2MCP HTTP request"| API
     API --> Planner
     Planner --> Workspace
     Workspace --> RepositoryModel
     RepositoryModel --> Inspectors
-    Inspectors --> API
+    Inspectors --> Intelligence
+    Intelligence --> Report
+    Report --> API
     API -->|"structured result"| Client
 ```
 
@@ -132,7 +144,8 @@ documentation and known ambiguities.
 ```
 
 Directories are introduced only when they contain working code or active
-documentation. AI, root-cause, and reporting directories do not exist yet.
+documentation. Root Cause Investigation and external model adapters do not
+exist yet.
 
 ## Run locally
 
@@ -168,8 +181,8 @@ POST /investigate
 ```
 
 It returns a structured repository summary. `POST /audit` accepts the same
-request and returns structured security findings. `/investigate` continues to
-return HTTP 501 placeholder JSON.
+request and returns enriched findings, scoring, fix order, and a structured
+Security Report. `/investigate` continues to return HTTP 501 placeholder JSON.
 
 Run all repository checks:
 
@@ -204,12 +217,14 @@ deployment variable list.
    placeholder services, logging, CI, Docker, and Railway configuration.
 3. **Milestone 2:** complete and approved. Public GitHub acquisition,
    Repository Model, file-tree scanning, and stack detection.
-4. **Milestone 3:** deterministic Security Audit Engine and structured
-   findings.
-5. **Milestone 4:** deliver one bounded Root Cause Investigation vertical slice.
-6. **Milestone 5:** harden isolation, observability, reliability, and Railway
+4. **Milestone 3:** complete and approved. Deterministic Security Audit Engine
+   and structured findings.
+5. **Milestone 4:** Security Intelligence Layer, deterministic scoring,
+   evidence-bound remediation, fix ordering, and structured reporting.
+6. **Milestone 5:** deliver one bounded Root Cause Investigation vertical slice.
+7. **Milestone 6:** harden isolation, observability, reliability, and Railway
    deployment.
-7. **Milestone 6:** register, validate, and publish the ASP service in OKX.AI.
+8. **Milestone 7:** register, validate, and publish the ASP service in OKX.AI.
 
 Each milestone requires review before the next milestone begins.
 
@@ -227,9 +242,7 @@ Each milestone requires review before the next milestone begins.
 
 ## Repository and license
 
-The intended canonical repository was provided as
-`https://github.com/onchaindc/Adam`. It was not publicly reachable during the
-July 22, 2026 review, and this local Git repository has no `origin` configured.
+The canonical repository is `https://github.com/onchaindc/Adam`.
 
 No open-source license has been selected. Until a license is added, standard
 copyright restrictions apply.
