@@ -307,6 +307,20 @@ describe("HTTP routes", () => {
       const baseUrl = `http://127.0.0.1:${address.port}`;
 
       const health = await fetch(`${baseUrl}/health`);
+      const bareAudit = await fetch(`${baseUrl}/audit`, {
+        method: "POST",
+      });
+      const bareInvestigation = await fetch(`${baseUrl}/investigate`, {
+        method: "POST",
+      });
+      const barePullRequestReview = await fetch(`${baseUrl}/review-pr`, {
+        method: "POST",
+      });
+      const malformedAudit = await fetch(`${baseUrl}/audit`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{",
+      });
       const audit = await fetch(`${baseUrl}/audit`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -416,6 +430,47 @@ describe("HTTP routes", () => {
           runtime: { instanceId: "test-instance", bootCount: 1 },
         },
       );
+      assert.equal(bareAudit.status, 200);
+      assert.deepEqual(
+        {
+          ...(await bareAudit.json()),
+          requestId: "ignored",
+        },
+        {
+          service: "security-audit",
+          status: "needs_input",
+          requestId: "ignored",
+          message:
+            "Provide a public GitHub repository URL to run a security audit.",
+          requiredInputs: [
+            {
+              id: "repositoryUrl",
+              type: "string",
+              required: true,
+              prompt: "Public GitHub repository URL",
+            },
+            {
+              id: "analysisMode",
+              type: "enum",
+              required: false,
+              prompt: "Analysis mode",
+              options: ["deterministic", "intelligent"],
+            },
+          ],
+        },
+      );
+      assert.equal(bareInvestigation.status, 200);
+      assert.equal(
+        (await bareInvestigation.json()).status,
+        "needs_input",
+      );
+      assert.equal(barePullRequestReview.status, 200);
+      assert.equal(
+        (await barePullRequestReview.json()).status,
+        "needs_input",
+      );
+      assert.equal(malformedAudit.status, 400);
+      assert.equal((await malformedAudit.json()).error, "invalid-json");
       assert.equal(audit.status, 200);
       assert.equal(receivedInputs["security-audit"].analysisMode, "intelligent");
       assert.deepEqual(
@@ -530,6 +585,69 @@ describe("HTTP routes", () => {
       assert.equal(
         (await rootCausePlanWithoutLogs.json()).error,
         "invalid-plan-input",
+      );
+    } finally {
+      await new Promise((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
+  });
+
+  it("terminates stalled A2MCP invocations before the review timeout", async () => {
+    const app = createApp({
+      dispatcher: {
+        async dispatch() {
+          return new Promise(() => {});
+        },
+      },
+      environment: loadEnvironment({
+        NODE_ENV: "test",
+        A2MCP_REQUEST_TIMEOUT_MS: "1000",
+      }),
+      logger: pino({ enabled: false }),
+      plannerService: {
+        async execute() {
+          throw new Error("Planner should not run in this test.");
+        },
+      },
+      runtimeState: {
+        instanceId: "test-instance",
+        bootCount: 1,
+        firstStartedAt: "2026-07-22T00:00:00.000Z",
+        lastStartedAt: "2026-07-22T00:00:00.000Z",
+      },
+    });
+    const server = app.listen(0);
+
+    try {
+      await new Promise((resolve) => server.once("listening", resolve));
+      const address = server.address();
+      assert(address && typeof address === "object");
+
+      const response = await fetch(
+        `http://127.0.0.1:${address.port}/audit`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            repositoryUrl: "https://github.com/onchaindc/Adam",
+          }),
+        },
+      );
+
+      assert.equal(response.status, 504);
+      assert.deepEqual(
+        {
+          ...(await response.json()),
+          requestId: "ignored",
+        },
+        {
+          error: "request-timeout",
+          requestId: "ignored",
+          message:
+            "The service could not complete within the A2MCP execution deadline.",
+          retryable: true,
+        },
       );
     } finally {
       await new Promise((resolve, reject) => {

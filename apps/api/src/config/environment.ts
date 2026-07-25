@@ -11,6 +11,12 @@ const environmentSchema = z
       .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
       .default("info"),
     STATE_FILE: z.string().min(1).default(".data/runtime-state.json"),
+    A2MCP_REQUEST_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1_000)
+      .max(240_000)
+      .default(120_000),
     REPOSITORY_CLONE_TIMEOUT_MS: z.coerce
       .number()
       .int()

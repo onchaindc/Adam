@@ -7,6 +7,11 @@ import type { RuntimeState } from "../../platform/state/runtime-state.js";
 import { planRequest } from "../../planner/planner.js";
 import type { AdamService } from "../../services/adam-service.js";
 import type { ServiceDispatcher } from "../../services/service-dispatcher.js";
+import {
+  executeWithDeadline,
+  isBareInvocation,
+  sendNeedsInput,
+} from "./a2mcp.js";
 
 const repositoryRequestSchema = z
   .object({
@@ -79,6 +84,30 @@ export function createRoutes(dependencies: RouteDependencies): Router {
   });
 
   router.post("/audit", async (request, response) => {
+    if (isBareInvocation(request.body)) {
+      sendNeedsInput(response, request.requestId, {
+        service: "security-audit",
+        message:
+          "Provide a public GitHub repository URL to run a security audit.",
+        requiredInputs: [
+          {
+            id: "repositoryUrl",
+            type: "string",
+            required: true,
+            prompt: "Public GitHub repository URL",
+          },
+          {
+            id: "analysisMode",
+            type: "enum",
+            required: false,
+            prompt: "Analysis mode",
+            options: ["deterministic", "intelligent"],
+          },
+        ],
+      });
+      return;
+    }
+
     const parsed = analysisRequestSchema.safeParse(request.body);
     if (!parsed.success) {
       response.status(400).json({
@@ -91,10 +120,14 @@ export function createRoutes(dependencies: RouteDependencies): Router {
     }
 
     const decision = planRequest({ requestedService: "security-audit" });
-    const result = await dependencies.dispatcher.dispatch(decision.service, {
-      requestId: request.requestId,
-      input: parsed.data,
-    });
+    const result = await executeWithDeadline(
+      () =>
+        dependencies.dispatcher.dispatch(decision.service, {
+          requestId: request.requestId,
+          input: parsed.data,
+        }),
+      dependencies.environment.A2MCP_REQUEST_TIMEOUT_MS,
+    );
     response.status(200).json(result);
   });
 
@@ -120,6 +153,37 @@ export function createRoutes(dependencies: RouteDependencies): Router {
   });
 
   router.post("/investigate", async (request, response) => {
+    if (isBareInvocation(request.body)) {
+      sendNeedsInput(response, request.requestId, {
+        service: "root-cause-investigation",
+        message:
+          "Provide a public GitHub repository URL and relevant failure logs.",
+        requiredInputs: [
+          {
+            id: "repositoryUrl",
+            type: "string",
+            required: true,
+            prompt: "Public GitHub repository URL",
+          },
+          {
+            id: "logs",
+            type: "array",
+            required: true,
+            prompt:
+              "Build, runtime, CI, stack-trace, or error-message log entries",
+          },
+          {
+            id: "analysisMode",
+            type: "enum",
+            required: false,
+            prompt: "Analysis mode",
+            options: ["deterministic", "intelligent"],
+          },
+        ],
+      });
+      return;
+    }
+
     const parsed = investigationRequestSchema.safeParse(request.body);
     if (!parsed.success) {
       response.status(400).json({
@@ -134,14 +198,42 @@ export function createRoutes(dependencies: RouteDependencies): Router {
     const decision = planRequest({
       requestedService: "root-cause-investigation",
     });
-    const result = await dependencies.dispatcher.dispatch(decision.service, {
-      requestId: request.requestId,
-      input: parsed.data,
-    });
+    const result = await executeWithDeadline(
+      () =>
+        dependencies.dispatcher.dispatch(decision.service, {
+          requestId: request.requestId,
+          input: parsed.data,
+        }),
+      dependencies.environment.A2MCP_REQUEST_TIMEOUT_MS,
+    );
     response.status(200).json(result);
   });
 
   router.post("/review-pr", async (request, response) => {
+    if (isBareInvocation(request.body)) {
+      sendNeedsInput(response, request.requestId, {
+        service: "pull-request-review",
+        message: "Provide a public GitHub pull request to review.",
+        requiredInputs: [
+          {
+            id: "pullRequest",
+            type: "string",
+            required: true,
+            prompt:
+              "Public GitHub pull request URL, or owner/repo/pullNumber coordinates",
+          },
+          {
+            id: "analysisMode",
+            type: "enum",
+            required: false,
+            prompt: "Analysis mode",
+            options: ["deterministic", "intelligent"],
+          },
+        ],
+      });
+      return;
+    }
+
     const parsed = pullRequestReviewSchema.safeParse(request.body);
     if (!parsed.success) {
       response.status(400).json({
@@ -156,10 +248,14 @@ export function createRoutes(dependencies: RouteDependencies): Router {
     const decision = planRequest({
       requestedService: "pull-request-review",
     });
-    const result = await dependencies.dispatcher.dispatch(decision.service, {
-      requestId: request.requestId,
-      input: parsed.data,
-    });
+    const result = await executeWithDeadline(
+      () =>
+        dependencies.dispatcher.dispatch(decision.service, {
+          requestId: request.requestId,
+          input: parsed.data,
+        }),
+      dependencies.environment.A2MCP_REQUEST_TIMEOUT_MS,
+    );
     response.status(200).json(result);
   });
 

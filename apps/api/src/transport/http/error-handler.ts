@@ -5,6 +5,7 @@ import { AiIntelligenceError } from "../../intelligence/ai/errors.js";
 import { PullRequestReviewError } from "../../investigation/pull-request/errors.js";
 import { RepositoryIntelligenceError } from "../../investigation/repository/errors.js";
 import { PlannerInputError } from "../../planner/errors.js";
+import { A2mcpRequestTimeoutError } from "./a2mcp.js";
 
 export function createErrorHandler(logger: Logger): ErrorRequestHandler {
   return (error: unknown, request, response, _next) => {
@@ -17,6 +18,31 @@ export function createErrorHandler(logger: Logger): ErrorRequestHandler {
       },
       "Unhandled request error",
     );
+
+    if (error instanceof A2mcpRequestTimeoutError) {
+      response.status(504).json({
+        error: "request-timeout",
+        requestId: request.requestId,
+        message:
+          "The service could not complete within the A2MCP execution deadline.",
+        retryable: true,
+      });
+      return;
+    }
+
+    if (
+      error instanceof SyntaxError &&
+      "type" in error &&
+      error.type === "entity.parse.failed"
+    ) {
+      response.status(400).json({
+        error: "invalid-json",
+        requestId: request.requestId,
+        message: "Request body must be valid JSON.",
+        retryable: false,
+      });
+      return;
+    }
 
     if (error instanceof RepositoryIntelligenceError) {
       const status =

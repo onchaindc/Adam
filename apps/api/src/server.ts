@@ -150,6 +150,9 @@ const app = createApp({
   runtimeState,
 });
 const server = createServer(app);
+server.requestTimeout = environment.A2MCP_REQUEST_TIMEOUT_MS + 10_000;
+server.headersTimeout = Math.min(60_000, server.requestTimeout);
+server.keepAliveTimeout = 5_000;
 
 await new Promise<void>((resolve, reject) => {
   server.once("error", reject);
