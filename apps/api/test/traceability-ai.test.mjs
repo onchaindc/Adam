@@ -5,6 +5,7 @@ import { AiIntelligenceEngine } from "../dist/intelligence/ai/ai-intelligence-en
 import { AiResultCache } from "../dist/intelligence/ai/ai-result-cache.js";
 import { PromptBuilder } from "../dist/intelligence/ai/prompt-builder.js";
 import { ReasoningFormatter } from "../dist/intelligence/ai/reasoning-formatter.js";
+import { AI_SECTION_KEYS } from "../dist/intelligence/ai/types.js";
 import { EvidenceLinkResolver } from "../dist/traceability/evidence-link-resolver.js";
 import { EvidenceTraceabilityEngine } from "../dist/traceability/evidence-traceability-engine.js";
 
@@ -155,7 +156,7 @@ describe("Sprint 6.5 evidence and AI boundaries", () => {
     assert.match(second.aiIntelligence.executiveSummary.content, /ADAM-RCI-FIND-0001/);
   });
 
-  it("rejects provider output that references an unknown finding", async () => {
+  it("replaces fabricated finding references with deterministic evidence", async () => {
     const provider = {
       async generate() {
         const section = {
@@ -185,10 +186,124 @@ describe("Sprint 6.5 evidence and AI boundaries", () => {
       new AiResultCache(60_000, 10),
     );
 
-    await assert.rejects(
-      engine.enhanceRootCause(createRootResponse()),
-      (error) => error?.code === "ai-output-invalid",
+    const enhanced = await engine.enhanceRootCause(createRootResponse());
+
+    for (const key of AI_SECTION_KEYS) {
+      const section = enhanced.aiIntelligence[key];
+      assert.deepEqual(section.findingIds, ["ADAM-RCI-FIND-0001"]);
+      assert.match(section.content, /ADAM-RCI-FIND-0001/);
+      assert.doesNotMatch(section.content, /ADAM-FAKE-0001/);
+    }
+  });
+
+  it("repairs incomplete sections from deterministic evidence", async () => {
+    const provider = {
+      async generate() {
+        const section = {
+          content: "The deterministic failure prevents application startup.",
+          findingIds: ["ADAM-RCI-FIND-0001"],
+        };
+        return {
+          provider: "gemini",
+          model: "test-model",
+          outputText: JSON.stringify({
+            executiveSummary: section,
+            developerSummary: section,
+            businessImpact: section,
+            attackNarrative: section,
+            remediationStrategy: section,
+            priorityRoadmap: section,
+            confidenceSummary: {
+              content: "",
+              findingIds: [],
+            },
+          }),
+        };
+      },
+    };
+    const engine = new AiIntelligenceEngine(
+      provider,
+      new PromptBuilder(),
+      new ReasoningFormatter(),
+      new AiResultCache(60_000, 10),
     );
+
+    const enhanced = await engine.enhanceRootCause(createRootResponse());
+
+    for (const key of AI_SECTION_KEYS) {
+      const section = enhanced.aiIntelligence[key];
+      assert.deepEqual(section.findingIds, ["ADAM-RCI-FIND-0001"]);
+      assert.match(section.content, /ADAM-RCI-FIND-0001/);
+    }
+  });
+
+  it("normalizes twenty incomplete response variants without schema failures", () => {
+    const formatter = new ReasoningFormatter();
+    const finding = {
+      findingId: "ADAM-SEC-0001",
+      title: "Fixture finding",
+      category: "configuration",
+      severity: "high",
+      confidence: "high",
+      repositoryFile: "src/config.ts",
+      lineNumbers: [12],
+      ruleId: "CONFIG-TEST",
+      description: "A deterministic configuration issue was detected.",
+      impact: "The application may start with an unsafe setting.",
+      evidenceIds: ["ADAM-SEC-EVID-0001"],
+      evidence: ["unsafe: true"],
+      recommendations: ["Disable the unsafe setting."],
+    };
+
+    for (let index = 0; index < 20; index += 1) {
+      const section = {
+        content:
+          index % 2 === 0
+            ? "Evidence-backed analysis without an inline identifier."
+            : "",
+        findingIds: index % 3 === 0 ? [] : [finding.findingId],
+      };
+      const output = Object.fromEntries(
+        AI_SECTION_KEYS.filter(
+          (_key, sectionIndex) => sectionIndex !== index % AI_SECTION_KEYS.length,
+        ).map((key) => [key, section]),
+      );
+      const formatted = formatter.format(
+        JSON.stringify(output),
+        [finding],
+      );
+
+      for (const key of AI_SECTION_KEYS) {
+        assert.deepEqual(formatted[key].findingIds, [finding.findingId]);
+        assert.match(formatted[key].content, /ADAM-SEC-0001/);
+      }
+    }
+  });
+
+  it("rebuilds malformed provider JSON from deterministic evidence", () => {
+    const formatter = new ReasoningFormatter();
+    const finding = {
+      findingId: "ADAM-SEC-0001",
+      title: "Fixture finding",
+      category: "configuration",
+      severity: "high",
+      confidence: "high",
+      repositoryFile: "src/config.ts",
+      lineNumbers: [12],
+      ruleId: "CONFIG-TEST",
+      description: "A deterministic configuration issue was detected.",
+      impact: "The application may start with an unsafe setting.",
+      evidenceIds: ["ADAM-SEC-EVID-0001"],
+      evidence: ["unsafe: true"],
+      recommendations: ["Disable the unsafe setting."],
+    };
+
+    const formatted = formatter.format("not-json", [finding]);
+
+    for (const key of AI_SECTION_KEYS) {
+      assert.deepEqual(formatted[key].findingIds, [finding.findingId]);
+      assert.match(formatted[key].content, /ADAM-SEC-0001/);
+    }
   });
 });
 

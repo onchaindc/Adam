@@ -77,7 +77,7 @@ export class AiIntelligenceEngine {
     const providerResult = await this.provider.generate(prompt);
     const reasoning = this.formatter.format(
       providerResult.outputText,
-      evidencePackage.findings.map((finding) => finding.findingId),
+      evidencePackage.findings,
     );
     const report: AiIntelligenceReport = {
       status: "completed",
