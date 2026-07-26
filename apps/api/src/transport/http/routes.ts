@@ -9,7 +9,7 @@ import type { AdamService } from "../../services/adam-service.js";
 import type { ServiceDispatcher } from "../../services/service-dispatcher.js";
 import {
   executeWithDeadline,
-  isBareInvocation,
+  isInputDiscoveryInvocation,
   sendNeedsInput,
 } from "./a2mcp.js";
 
@@ -84,7 +84,7 @@ export function createRoutes(dependencies: RouteDependencies): Router {
   });
 
   router.post("/audit", async (request, response) => {
-    if (isBareInvocation(request.body)) {
+    if (isInputDiscoveryInvocation(request.body, ["repositoryUrl"])) {
       sendNeedsInput(response, request.requestId, {
         service: "security-audit",
         message:
@@ -153,7 +153,9 @@ export function createRoutes(dependencies: RouteDependencies): Router {
   });
 
   router.post("/investigate", async (request, response) => {
-    if (isBareInvocation(request.body)) {
+    if (
+      isInputDiscoveryInvocation(request.body, ["repositoryUrl", "logs"])
+    ) {
       sendNeedsInput(response, request.requestId, {
         service: "root-cause-investigation",
         message:
@@ -210,7 +212,14 @@ export function createRoutes(dependencies: RouteDependencies): Router {
   });
 
   router.post("/review-pr", async (request, response) => {
-    if (isBareInvocation(request.body)) {
+    if (
+      isInputDiscoveryInvocation(request.body, [
+        "pullRequest",
+        "owner",
+        "repo",
+        "pullNumber",
+      ])
+    ) {
       sendNeedsInput(response, request.requestId, {
         service: "pull-request-review",
         message: "Provide a public GitHub pull request to review.",

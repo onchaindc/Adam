@@ -29,6 +29,17 @@ export function isBareInvocation(body: unknown): boolean {
   );
 }
 
+export function isInputDiscoveryInvocation(
+  body: unknown,
+  serviceInputKeys: readonly string[],
+): boolean {
+  return (
+    isBareInvocation(body) ||
+    (isRecord(body) &&
+      serviceInputKeys.every((key) => !Object.hasOwn(body, key)))
+  );
+}
+
 export function sendNeedsInput(
   response: Response,
   requestId: string,

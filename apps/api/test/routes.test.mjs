@@ -316,6 +316,49 @@ describe("HTTP routes", () => {
       const barePullRequestReview = await fetch(`${baseUrl}/review-pr`, {
         method: "POST",
       });
+      const marketplaceProbe72 = JSON.stringify({
+        type: "marketplace-probe",
+        context: {},
+        padding: "xxxxxxxxxxxxxxxxxx",
+      });
+      const marketplaceProbe169 = JSON.stringify({
+        type: "marketplace-probe",
+        context: {},
+        padding:
+          "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      });
+      assert.equal(Buffer.byteLength(marketplaceProbe72), 72);
+      assert.equal(Buffer.byteLength(marketplaceProbe169), 169);
+      const marketplaceAuditProbe = await fetch(`${baseUrl}/audit`, {
+        method: "POST",
+        headers: {
+          accept: "application/json, text/event-stream",
+          "content-type": "application/json",
+        },
+        body: marketplaceProbe72,
+      });
+      const marketplaceInvestigationProbe = await fetch(
+        `${baseUrl}/investigate`,
+        {
+          method: "POST",
+          headers: {
+            accept: "application/json, text/event-stream",
+            "content-type": "application/json",
+          },
+          body: marketplaceProbe169,
+        },
+      );
+      const marketplacePullRequestProbe = await fetch(
+        `${baseUrl}/review-pr`,
+        {
+          method: "POST",
+          headers: {
+            accept: "application/json, text/event-stream",
+            "content-type": "application/json",
+          },
+          body: marketplaceProbe72,
+        },
+      );
       const malformedAudit = await fetch(`${baseUrl}/audit`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -467,6 +510,21 @@ describe("HTTP routes", () => {
       assert.equal(barePullRequestReview.status, 200);
       assert.equal(
         (await barePullRequestReview.json()).status,
+        "needs_input",
+      );
+      assert.equal(marketplaceAuditProbe.status, 200);
+      assert.equal(
+        (await marketplaceAuditProbe.json()).status,
+        "needs_input",
+      );
+      assert.equal(marketplaceInvestigationProbe.status, 200);
+      assert.equal(
+        (await marketplaceInvestigationProbe.json()).status,
+        "needs_input",
+      );
+      assert.equal(marketplacePullRequestProbe.status, 200);
+      assert.equal(
+        (await marketplacePullRequestProbe.json()).status,
         "needs_input",
       );
       assert.equal(malformedAudit.status, 400);
