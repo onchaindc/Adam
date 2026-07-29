@@ -29,6 +29,9 @@ importers:
       pino-http:
         specifier: 11.0.0
         version: 11.0.0
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -531,6 +534,11 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
+  yaml@2.9.0:
+    resolution: {integrity: sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
@@ -1021,5 +1029,7 @@ snapshots:
   vary@1.1.2: {}
 
   wrappy@1.0.2: {}
+
+  yaml@2.9.0: {}
 
   zod@4.4.3: {}

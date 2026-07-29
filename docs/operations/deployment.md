@@ -32,6 +32,17 @@ INVESTIGATION_MAX_LOG_INPUTS=20
 INVESTIGATION_MAX_LOG_BYTES=200000
 INVESTIGATION_MAX_LOG_LINES=5000
 GITHUB_API_TIMEOUT_MS=30000
+OSV_API_URL=https://api.osv.dev
+OSV_API_TIMEOUT_MS=20000
+OSV_MAX_PACKAGES=500
+OSV_MAX_ADVISORIES=100
+RUNTIME_SANDBOX_ENABLED=false
+RUNTIME_SANDBOX_IMAGE=node:24.18.0-bookworm-slim
+RUNTIME_SANDBOX_TIMEOUT_MS=90000
+RUNTIME_SANDBOX_MEMORY_MB=768
+RUNTIME_SANDBOX_CPUS=1
+RUNTIME_SANDBOX_PIDS=128
+RUNTIME_SANDBOX_MAX_PACKAGES=4
 PULL_REQUEST_MAX_FILES=300
 PULL_REQUEST_MAX_PATCH_BYTES=5000000
 AI_PROVIDER=disabled
@@ -47,6 +58,23 @@ Railway injects `PORT`; do not hardcode it.
 `GITHUB_TOKEN` is optional for public pull request review and can be added as a
 Railway secret to increase GitHub API rate limits. It does not enable private
 repository support.
+
+The Security Audit defaults to `securityProfile=static`. The `live` profile
+uses OSV to query current advisories for exact package versions. Responses are
+time-stamped and bounded by the configured package, advisory, and timeout
+limits.
+
+The `sandboxed` profile requires `RUNTIME_SANDBOX_ENABLED=true`, Docker daemon
+access, and a trusted configured image. A normal Railway service does not
+expose a Docker daemon by default, so enable this only with an isolated Docker
+worker or equivalent trusted execution environment. Adam refuses host
+execution when Docker is unavailable.
+
+Sandbox preparation may use network access to install locked dependencies with
+lifecycle scripts disabled. Build and test execution uses no network, a
+read-only root filesystem, dropped capabilities, `no-new-privileges`, and the
+configured time, memory, CPU, and PID limits. These checks improve runtime
+evidence but do not prove vulnerability reachability or exploitability.
 
 To enable intelligent mode, choose one provider:
 

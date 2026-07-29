@@ -72,6 +72,62 @@ const environmentSchema = z
       .min(1_000)
       .max(120_000)
       .default(30_000),
+    OSV_API_URL: z.string().url().default("https://api.osv.dev"),
+    OSV_API_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1_000)
+      .max(120_000)
+      .default(20_000),
+    OSV_MAX_PACKAGES: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(5_000)
+      .default(500),
+    OSV_MAX_ADVISORIES: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(1_000)
+      .default(100),
+    RUNTIME_SANDBOX_ENABLED: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
+    RUNTIME_SANDBOX_IMAGE: z
+      .string()
+      .min(1)
+      .default("node:24.18.0-bookworm-slim"),
+    RUNTIME_SANDBOX_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(5_000)
+      .max(240_000)
+      .default(90_000),
+    RUNTIME_SANDBOX_MEMORY_MB: z.coerce
+      .number()
+      .int()
+      .min(128)
+      .max(8_192)
+      .default(768),
+    RUNTIME_SANDBOX_CPUS: z.coerce
+      .number()
+      .min(0.25)
+      .max(8)
+      .default(1),
+    RUNTIME_SANDBOX_PIDS: z.coerce
+      .number()
+      .int()
+      .min(16)
+      .max(1_024)
+      .default(128),
+    RUNTIME_SANDBOX_MAX_PACKAGES: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(20)
+      .default(4),
     PULL_REQUEST_MAX_FILES: z.coerce
       .number()
       .int()

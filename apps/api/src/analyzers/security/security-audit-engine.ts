@@ -10,6 +10,12 @@ import type {
   SecurityInspector,
 } from "./types.js";
 
+export interface SecurityAuditEngineOptions {
+  readonly additionalFindings?: readonly SecurityFindingCandidate[];
+  readonly additionalLimitations?: readonly string[];
+  readonly liveVulnerabilityAnalysis?: boolean;
+}
+
 const severityOrder: Readonly<Record<SecuritySeverity, number>> = {
   critical: 0,
   high: 1,
@@ -29,15 +35,19 @@ export class SecurityAuditEngine {
     private readonly inspectors: readonly SecurityInspector[],
   ) {}
 
-  public analyze(model: RepositoryModel): SecurityAuditEngineResult {
+  public analyze(
+    model: RepositoryModel,
+    options: SecurityAuditEngineOptions = {},
+  ): SecurityAuditEngineResult {
     const eligibleInspectors = this.inspectors.filter(
       (inspector) =>
         inspector.category !== "smart-contract" ||
         model.summary.smartContracts.detected,
     );
-    const candidates = eligibleInspectors.flatMap((inspector) =>
-      inspector.inspect(model),
-    );
+    const candidates = [
+      ...eligibleInspectors.flatMap((inspector) => inspector.inspect(model)),
+      ...(options.additionalFindings ?? []),
+    ];
     const findings = assignFindingIds(deduplicateFindings(candidates));
 
     return {
@@ -48,8 +58,13 @@ export class SecurityAuditEngine {
       findings,
       limitations: [
         ...model.analysisLimitations,
-        "Dependency inspection uses committed manifests and offline policy baselines; it does not query live registries or vulnerability databases.",
+        ...(options.liveVulnerabilityAnalysis
+          ? []
+          : [
+              "Dependency inspection uses committed manifests and offline policy baselines; it does not query live registries or vulnerability databases.",
+            ]),
         "Pattern findings identify risky constructs and require later contextual validation.",
+        ...(options.additionalLimitations ?? []),
       ],
     };
   }

@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { AuthenticationAuthorizationInspector } from "./analyzers/security/authentication-authorization-inspector.js";
 import { ConfigurationInspector } from "./analyzers/security/configuration-inspector.js";
 import { DependencyInspector } from "./analyzers/security/dependency-inspector.js";
+import { LiveVulnerabilityInspector } from "./analyzers/security/live-vulnerability-inspector.js";
 import { SecretsScanner } from "./analyzers/security/secrets-scanner.js";
 import { SecurityAuditEngine } from "./analyzers/security/security-audit-engine.js";
 import { SmartContractInspector } from "./analyzers/security/smart-contract-inspector.js";
@@ -30,12 +31,15 @@ import { ResponseAggregator } from "./planner/response-aggregator.js";
 import { ServiceOrchestrator } from "./planner/service-orchestrator.js";
 import { createAiReasoningProvider } from "./platform/ai/ai-provider-factory.js";
 import { GitHubRepositoryAcquirer } from "./platform/github/github-repository.js";
+import { OsvClient } from "./platform/osv/osv-client.js";
 import { FileRuntimeStateStore } from "./platform/state/runtime-state.js";
+import { DockerRuntimeAnalyzer } from "./runtime/docker-runtime-analyzer.js";
 import { PlannerService } from "./services/planner-service.js";
 import { PullRequestReviewService } from "./services/pull-request-review-service.js";
 import { RepositoryIntelligenceService } from "./services/repository-intelligence-service.js";
 import { RootCauseInvestigationService } from "./services/root-cause-investigation-service.js";
 import { SecurityAuditService } from "./services/security-audit-service.js";
+import { SecurityEnrichmentEngine } from "./services/security-enrichment-engine.js";
 import { DefaultServiceDispatcher } from "./services/service-dispatcher.js";
 import { EvidenceLinkResolver } from "./traceability/evidence-link-resolver.js";
 import { EvidenceTraceabilityEngine } from "./traceability/evidence-traceability-engine.js";
@@ -62,6 +66,25 @@ const securityAuditEngine = new SecurityAuditEngine([
   new SmartContractInspector(),
 ]);
 const securityIntelligence = new SecurityIntelligenceEngine();
+const securityEnrichment = new SecurityEnrichmentEngine(
+  new LiveVulnerabilityInspector(
+    new OsvClient({
+      baseUrl: environment.OSV_API_URL,
+      timeoutMs: environment.OSV_API_TIMEOUT_MS,
+      maxAdvisories: environment.OSV_MAX_ADVISORIES,
+    }),
+    { maxPackages: environment.OSV_MAX_PACKAGES },
+  ),
+  new DockerRuntimeAnalyzer({
+    enabled: environment.RUNTIME_SANDBOX_ENABLED,
+    image: environment.RUNTIME_SANDBOX_IMAGE,
+    timeoutMs: environment.RUNTIME_SANDBOX_TIMEOUT_MS,
+    memoryMb: environment.RUNTIME_SANDBOX_MEMORY_MB,
+    cpus: environment.RUNTIME_SANDBOX_CPUS,
+    pidsLimit: environment.RUNTIME_SANDBOX_PIDS,
+    maxPackages: environment.RUNTIME_SANDBOX_MAX_PACKAGES,
+  }),
+);
 const traceability = new EvidenceTraceabilityEngine(
   new EvidenceLinkResolver(),
 );
@@ -86,6 +109,7 @@ const securityAuditService = new SecurityAuditService(
   securityIntelligence,
   traceability,
   aiIntelligence,
+  securityEnrichment,
 );
 const pullRequestReviewService = new PullRequestReviewService(
   new PullRequestFetcher({

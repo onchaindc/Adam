@@ -21,10 +21,14 @@ const repositoryRequestSchema = z
 const analysisModeSchema = z
   .enum(["deterministic", "intelligent"])
   .default("deterministic");
+const securityProfileSchema = z
+  .enum(["static", "live", "sandboxed"])
+  .default("static");
 const analysisRequestSchema = z
   .object({
     repositoryUrl: z.string().min(1),
     analysisMode: analysisModeSchema,
+    securityProfile: securityProfileSchema,
   })
   .strict();
 const pullRequestUrlSchema = z
@@ -103,6 +107,13 @@ export function createRoutes(dependencies: RouteDependencies): Router {
             prompt: "Analysis mode",
             options: ["deterministic", "intelligent"],
           },
+          {
+            id: "securityProfile",
+            type: "enum",
+            required: false,
+            prompt: "Security profile",
+            options: ["static", "live", "sandboxed"],
+          },
         ],
       });
       return;
@@ -114,7 +125,7 @@ export function createRoutes(dependencies: RouteDependencies): Router {
         error: "invalid-request",
         requestId: request.requestId,
         message:
-          "Body must contain a repositoryUrl and optional analysisMode.",
+          "Body must contain a repositoryUrl and optional analysisMode and securityProfile.",
       });
       return;
     }

@@ -54,13 +54,17 @@ Sprints 1 through 7 are approved. The repository now contains:
   repository detection with confidence and evidence;
 - deterministic language-specific security and reliability rules integrated
   into the existing static-pattern inspector;
+- opt-in live dependency advisory enrichment through OSV with time-stamped
+  results;
+- opt-in Docker-isolated Node.js build and test validation with fail-closed
+  host execution controls;
 - structured logging and persistent operational runtime state;
 - Docker, Railway, and GitHub Actions configuration.
 
 Conversational chat, new services, and new A2MCP integrations remain
 intentionally unimplemented.
 
-Last documentation review: **July 24, 2026**
+Last documentation review: **July 29, 2026**
 
 ## Initial services
 
@@ -78,8 +82,11 @@ Given a public GitHub repository, Adam:
 - return severity-grouped findings, a recommended fix order, and a structured
   professional report.
 
-Sprint 4 intelligence is deterministic and rule-aware. It does not send
-repository evidence to an external model or claim runtime exploitability.
+The default `static` security profile remains deterministic and offline.
+`live` adds exact-version OSV advisory checks, while `sandboxed` also runs
+supported Node.js build and test scripts in a constrained Docker environment.
+Sandbox results strengthen evidence but do not claim proven reachability or
+exploitability.
 
 ### Root Cause Investigation
 
@@ -144,8 +151,9 @@ language.
 
 The existing deterministic static-pattern inspector consumes one canonical
 language-rule registry. It detects bounded language-specific security and
-reliability patterns without executing repository code, installing
-dependencies, querying vulnerability databases, or changing security scoring.
+reliability patterns without executing repository code. Live advisory lookup
+and sandboxed runtime validation are separate, explicitly requested security
+profiles.
 
 ## Product principles
 
@@ -267,8 +275,9 @@ POST /plan
 
 It returns a structured repository summary. `POST /audit` accepts the same
 request and returns enriched findings, scoring, fix order, and a structured
-Security Report. `POST /investigate` accepts a repository URL plus bounded
-inline logs and returns a structured root-cause investigation.
+Security Report. It also accepts `securityProfile` as `static` (default),
+`live`, or `sandboxed`. `POST /investigate` accepts a repository URL plus
+bounded inline logs and returns a structured root-cause investigation.
 
 ```json
 {
@@ -388,10 +397,16 @@ Each milestone requires review before the next milestone begins.
   removed, binary, and unavailable files remain visible in metadata but cannot
   be statically inspected.
 - Adam will not execute repository scripts, package managers, builds, tests, or
-  smart contracts by default.
+  smart contracts by default. Sandboxed Node.js build/test analysis is opt-in,
+  requires Docker, and refuses to fall back to host execution.
 - Language-specific findings are deterministic static heuristics. They identify
   evidence that warrants review, not runtime reachability or guaranteed
   exploitability.
+- Live OSV results reflect the advisory database at the response's `queriedAt`
+  timestamp and depend on exact versions available in supported lockfiles.
+- Sandboxed execution disables dependency lifecycle scripts and applies
+  network, filesystem, capability, process, resource, and time restrictions,
+  but it does not prove vulnerability exploitability.
 - Repository acquisition is shallow, non-interactive, temporary, and bounded by
   configurable clone-time, file-count, and directory-depth limits.
 - Private repository authentication, arbitrary log URLs, asynchronous jobs, and

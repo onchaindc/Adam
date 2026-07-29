@@ -370,6 +370,7 @@ describe("HTTP routes", () => {
         body: JSON.stringify({
           repositoryUrl: "placeholder",
           analysisMode: "intelligent",
+          securityProfile: "live",
         }),
       });
       const repositorySummary = await fetch(
@@ -499,6 +500,13 @@ describe("HTTP routes", () => {
               prompt: "Analysis mode",
               options: ["deterministic", "intelligent"],
             },
+            {
+              id: "securityProfile",
+              type: "enum",
+              required: false,
+              prompt: "Security profile",
+              options: ["static", "live", "sandboxed"],
+            },
           ],
         },
       );
@@ -531,6 +539,7 @@ describe("HTTP routes", () => {
       assert.equal((await malformedAudit.json()).error, "invalid-json");
       assert.equal(audit.status, 200);
       assert.equal(receivedInputs["security-audit"].analysisMode, "intelligent");
+      assert.equal(receivedInputs["security-audit"].securityProfile, "live");
       assert.deepEqual(
         {
           ...(await audit.json()),

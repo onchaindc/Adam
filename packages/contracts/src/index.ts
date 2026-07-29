@@ -19,6 +19,7 @@ export interface ServiceRequest {
 
 export type DetectionConfidence = "high" | "medium" | "low";
 export type AnalysisMode = "deterministic" | "intelligent";
+export type SecurityProfile = "static" | "live" | "sandboxed";
 export type AiProviderName = "openai" | "gemini";
 
 export interface StackDetection {
@@ -261,6 +262,7 @@ export interface SecurityAuditResponse {
   readonly status: "completed";
   readonly requestId: string;
   readonly analysisMode: AnalysisMode;
+  readonly securityProfile: SecurityProfile;
   readonly repository: RepositorySummary["repository"];
   readonly modulesExecuted: readonly SecurityFindingCategory[];
   readonly filesAnalyzed: number;
@@ -273,6 +275,37 @@ export interface SecurityAuditResponse {
   readonly aiIntelligence: AiIntelligenceReport | null;
   readonly report: SecurityReport;
   readonly limitations: readonly string[];
+  readonly enrichment: SecurityAuditEnrichment;
+}
+
+export interface LiveVulnerabilityAnalysis {
+  readonly status: "not-requested" | "completed" | "failed";
+  readonly provider: "OSV";
+  readonly queriedAt: string | null;
+  readonly packagesChecked: number;
+  readonly advisoriesFound: number;
+  readonly limitation: string | null;
+}
+
+export interface RuntimeAnalysisCheck {
+  readonly packagePath: string;
+  readonly command: string;
+  readonly status: "passed" | "failed";
+  readonly exitCode: number | null;
+  readonly durationMs: number;
+  readonly outputExcerpt: string;
+}
+
+export interface RuntimeAnalysis {
+  readonly status: "not-requested" | "completed" | "skipped" | "failed";
+  readonly sandbox: "docker";
+  readonly checks: readonly RuntimeAnalysisCheck[];
+  readonly limitation: string | null;
+}
+
+export interface SecurityAuditEnrichment {
+  readonly liveVulnerabilities: LiveVulnerabilityAnalysis;
+  readonly runtimeAnalysis: RuntimeAnalysis;
 }
 
 export type InvestigationLogSource =

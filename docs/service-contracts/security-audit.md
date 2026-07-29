@@ -9,13 +9,21 @@
 ```json
 {
   "repositoryUrl": "https://github.com/onchaindc/Adam",
-  "analysisMode": "deterministic"
+  "analysisMode": "deterministic",
+  "securityProfile": "live"
 }
 ```
 
 The repository must satisfy the public GitHub restrictions documented by the
 Repository Intelligence contract.
 `analysisMode` is optional and accepts `deterministic` or `intelligent`.
+`securityProfile` is optional and accepts:
+
+- `static` (default): repository inspection without external vulnerability
+  queries or repository code execution;
+- `live`: static inspection plus exact-version advisory lookup through OSV;
+- `sandboxed`: live inspection plus supported Node.js build and test commands
+  inside a constrained Docker sandbox.
 
 ## Security audit behavior
 
@@ -51,6 +59,7 @@ The Security Intelligence Layer then:
   "status": "completed",
   "requestId": "generated-request-id",
   "analysisMode": "deterministic",
+  "securityProfile": "live",
   "repository": {
     "name": "Adam",
     "owner": "onchaindc",
@@ -98,6 +107,22 @@ The Security Intelligence Layer then:
     "evidence": [],
     "recommendations": []
   },
+  "enrichment": {
+    "liveVulnerabilities": {
+      "status": "completed",
+      "provider": "OSV",
+      "queriedAt": "2026-07-29T00:00:00.000Z",
+      "packagesChecked": 48,
+      "advisoriesFound": 2,
+      "limitation": null
+    },
+    "runtimeAnalysis": {
+      "status": "not-requested",
+      "sandbox": "docker",
+      "checks": [],
+      "limitation": null
+    }
+  },
   "aiIntelligence": null,
   "recommendedFixOrder": [
     {
@@ -127,9 +152,22 @@ The Security Intelligence Layer then:
 }
 ```
 
-Secret evidence is redacted. Dependency inspection is offline and does not
-query live package registries or vulnerability databases. Language-specific
-rules are static heuristics and do not claim runtime reachability.
+Secret evidence is redacted. The default `static` profile remains offline.
+The `live` and `sandboxed` profiles send exact package ecosystem, name, and
+version coordinates extracted from supported lockfiles to OSV. `queriedAt`
+records when that lookup was performed, so advisory results are time-bound.
+
+Sandboxed analysis is opt-in and fail-closed. Adam never executes repository
+code directly on the host. A deployment must enable the runtime sandbox and
+provide Docker plus a trusted configured image. Dependency installation runs
+with lifecycle scripts disabled. Build and test checks then run without
+network access in containers with a read-only root filesystem, dropped Linux
+capabilities, `no-new-privileges`, and configured memory, CPU, PID, and time
+limits. Unsupported repositories or unavailable Docker produce a structured
+`skipped` result.
+
+Language-specific rules and sandbox results improve evidence but do not prove
+runtime reachability or exploitability.
 
 ## Scoring methodology
 

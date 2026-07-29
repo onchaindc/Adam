@@ -16,6 +16,7 @@ import type { RepositoryModel } from "../investigation/repository/model.js";
 import type { RepositoryScanner } from "../investigation/repository/repository-scanner.js";
 import type { EvidenceTraceabilityEngine } from "../traceability/evidence-traceability-engine.js";
 import type { AdamService } from "./adam-service.js";
+import { staticSecurityEnrichment } from "./security-enrichment-engine.js";
 import { analyzeSecurityModel } from "./security-model-analysis.js";
 
 interface PullRequestReviewInput extends PullRequestInput {
@@ -54,6 +55,8 @@ export class PullRequestReviewService implements AdamService {
         requestId: request.requestId,
         model,
         analysisMode,
+        securityProfile: "static",
+        enrichment: staticSecurityEnrichment(),
         engine: this.engine,
         intelligence: this.intelligence,
         traceability: this.traceability,

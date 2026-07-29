@@ -1,5 +1,6 @@
 import type {
   AnalysisMode,
+  SecurityProfile,
   SecurityAuditResponse,
   ServiceRequest,
 } from "@adam/contracts";
@@ -16,10 +17,16 @@ import type { AdamService } from "./adam-service.js";
 import { requireAiIntelligence } from "./analysis-mode.js";
 import { withRepositoryModel } from "./repository-model-execution.js";
 import { analyzeSecurityModel } from "./security-model-analysis.js";
+import type { SecurityEnrichmentEngine } from "./security-enrichment-engine.js";
+import {
+  NoopSecurityEnrichmentEngine,
+  staticSecurityEnrichment,
+} from "./security-enrichment-engine.js";
 
 interface SecurityAuditInput {
   readonly repositoryUrl: string;
   readonly analysisMode?: AnalysisMode;
+  readonly securityProfile?: SecurityProfile;
 }
 
 export class SecurityAuditService implements AdamService {
@@ -34,20 +41,26 @@ export class SecurityAuditService implements AdamService {
       new EvidenceLinkResolver(),
     ),
     private readonly aiIntelligence: AiIntelligenceEngine | null = null,
+    private readonly enrichment: Pick<SecurityEnrichmentEngine, "analyze"> =
+      new NoopSecurityEnrichmentEngine(),
   ) {}
 
   public async execute(request: ServiceRequest): Promise<SecurityAuditResponse> {
     const input = request.input as SecurityAuditInput;
     const analysisMode = input.analysisMode ?? "deterministic";
+    const securityProfile = input.securityProfile ?? "static";
     return withRepositoryModel(
       this.acquirer,
       this.scanner,
       input.repositoryUrl,
       async (model) => {
+        const enrichment = await this.enrichment.analyze(model, securityProfile);
         const response = analyzeSecurityModel({
           requestId: request.requestId,
           model,
           analysisMode,
+          securityProfile,
+          enrichment,
           engine: this.engine,
           intelligence: this.intelligence,
           traceability: this.traceability,
@@ -69,6 +82,8 @@ export class SecurityAuditService implements AdamService {
         requestId: context.requestId,
         model: context.model,
         analysisMode: "deterministic",
+        securityProfile: "static",
+        enrichment: staticSecurityEnrichment(),
         engine: this.engine,
         intelligence: this.intelligence,
         traceability: this.traceability,
