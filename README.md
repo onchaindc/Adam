@@ -409,6 +409,9 @@ Each milestone requires review before the next milestone begins.
   but it does not prove vulnerability exploitability.
 - Repository acquisition is shallow, non-interactive, temporary, and bounded by
   configurable clone-time, file-count, and directory-depth limits.
+- Remote audits can inspect only files present in the fetched Git commit;
+  local, untracked, gitignored, deleted, and deployment-only secrets are not
+  available to Adam.
 - Private repository authentication, arbitrary log URLs, asynchronous jobs, and
   A2A task handling are outside the initial approved scope.
 - Intelligent mode requires an explicitly configured provider key. Production

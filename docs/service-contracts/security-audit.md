@@ -153,6 +153,9 @@ The Security Intelligence Layer then:
 ```
 
 Secret evidence is redacted. The default `static` profile remains offline.
+Repository acquisition only includes files present in the fetched Git commit.
+Local, untracked, gitignored, deleted, and deployment-only files are not
+visible to the service and are identified as a limitation in every report.
 The `live` and `sandboxed` profiles send exact package ecosystem, name, and
 version coordinates extracted from supported lockfiles to OSV. `queriedAt`
 records when that lookup was performed, so advisory results are time-bound.

@@ -122,6 +122,70 @@ describe("SecurityAuditEngine", () => {
       false,
     );
   });
+
+  it("detects and redacts an unquoted EVM private key in a committed env file", () => {
+    const privateKey =
+      "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const model = createModel(
+      [file(".env", "", `PRIVATE_KEY=${privateKey}\n`)],
+      "{}",
+      false,
+    );
+
+    const result = createEngine().analyze(model);
+    const finding = result.findings.find(
+      ({ ruleId }) => ruleId === "SEC-EVM-PRIVATE-KEY",
+    );
+
+    assert.equal(finding?.severity, "critical");
+    assert.equal(finding?.file, ".env");
+    assert.match(finding?.evidence ?? "", /\[REDACTED\]/);
+    assert.equal(finding?.evidence.includes(privateKey), false);
+    assert.match(
+      result.limitations.join(" "),
+      /local, untracked, gitignored/i,
+    );
+  });
+
+  it("flags populated sensitive template values without claiming they are valid keys", () => {
+    const testValue = "not-a-real-private-key-value-123";
+    const model = createModel(
+      [
+        file(
+          "contracts/.env.example",
+          ".example",
+          [
+            `PRIVATE_KEY=${testValue}`,
+            "API_KEY=your-api-key",
+            "TOKEN=",
+          ].join("\n"),
+        ),
+      ],
+      "{}",
+      false,
+    );
+
+    const result = createEngine().analyze(model);
+    const finding = result.findings.find(
+      ({ ruleId }) => ruleId === "SEC-POPULATED-ENV-SECRET",
+    );
+
+    assert.equal(finding?.severity, "high");
+    assert.equal(finding?.file, "contracts/.env.example");
+    assert.equal(finding?.title, "Populated sensitive environment value");
+    assert.match(finding?.evidence ?? "", /\[REDACTED\]/);
+    assert.equal(finding?.evidence.includes(testValue), false);
+    assert.equal(
+      result.findings.some(
+        ({ ruleId }) => ruleId === "SEC-EVM-PRIVATE-KEY",
+      ),
+      false,
+    );
+    assert.equal(
+      result.findings.filter(({ category }) => category === "secrets").length,
+      1,
+    );
+  });
 });
 
 function createEngine() {

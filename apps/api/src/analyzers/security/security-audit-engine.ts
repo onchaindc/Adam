@@ -58,6 +58,7 @@ export class SecurityAuditEngine {
       findings,
       limitations: [
         ...model.analysisLimitations,
+        "Repository analysis is limited to files present in the acquired Git commit; local, untracked, gitignored, deleted, and deployment-only secrets are not visible.",
         ...(options.liveVulnerabilityAnalysis
           ? []
           : [

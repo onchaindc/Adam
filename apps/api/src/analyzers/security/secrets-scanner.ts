@@ -35,6 +35,13 @@ const secretRules = [
     severity: "critical",
   },
   {
+    ruleId: "SEC-EVM-PRIVATE-KEY",
+    title: "Likely EVM private key",
+    pattern:
+      /\b(?:private[_-]?key|wallet[_-]?(?:private[_-]?)?key|deployer[_-]?(?:private[_-]?)?key|signer[_-]?(?:private[_-]?)?key)\b["']?\s*[:=]\s*["']?(?:0x)?[a-f0-9]{64}\b/i,
+    severity: "critical",
+  },
+  {
     ruleId: "SEC-HARDCODED-CREDENTIAL",
     title: "Hardcoded credential",
     pattern:
@@ -56,15 +63,17 @@ export class SecretsScanner implements SecurityInspector {
     const findings: SecurityFindingCandidate[] = [];
 
     for (const source of collectSourceLines(model.files)) {
-      if (shouldSkipSource(source.file.path, source.text)) {
+      if (isPlaceholderValue(source.text)) {
         continue;
       }
 
+      let matchedSpecificRule = false;
       for (const rule of secretRules) {
         if (!rule.pattern.test(source.text)) {
           continue;
         }
 
+        matchedSpecificRule = true;
         findings.push({
           ruleId: rule.ruleId,
           category: this.category,
@@ -75,6 +84,27 @@ export class SecretsScanner implements SecurityInspector {
           description: "A value matching a credential pattern is stored in source text.",
           evidence: redactAssignment(source.text),
           confidence: isLikelyTestOrExample(source.file.path) ? "medium" : "high",
+        });
+      }
+
+      if (
+        !matchedSpecificRule &&
+        isPopulatedSensitiveEnvironmentAssignment(
+          source.file.path,
+          source.text,
+        )
+      ) {
+        findings.push({
+          ruleId: "SEC-POPULATED-ENV-SECRET",
+          category: this.category,
+          title: "Populated sensitive environment value",
+          severity: "high",
+          file: source.file.path,
+          line: source.line,
+          description:
+            "A committed environment file contains a non-placeholder value assigned to a sensitive variable name. The value may be test data, but it should be reviewed and removed or replaced with an empty placeholder.",
+          evidence: redactAssignment(source.text),
+          confidence: "high",
         });
       }
 
@@ -97,18 +127,39 @@ export class SecretsScanner implements SecurityInspector {
   }
 }
 
-function shouldSkipSource(path: string, text: string): boolean {
-  const lowerPath = path.toLowerCase();
-  if (
-    lowerPath.endsWith(".env.example") ||
-    lowerPath.endsWith(".env.sample") ||
-    lowerPath.endsWith(".env.template")
-  ) {
-    return true;
+function isPlaceholderValue(text: string): boolean {
+  return /(?:changeme|replace[_-]?me|your[_-]?(?:api[_-]?)?(?:key|token|secret)|example[_-]?(?:api[_-]?)?(?:key|token|secret))/i.test(
+    text,
+  );
+}
+
+function isPopulatedSensitiveEnvironmentAssignment(
+  path: string,
+  text: string,
+): boolean {
+  const filename = path.split("/").at(-1)?.toLowerCase() ?? "";
+  if (filename !== ".env" && !filename.startsWith(".env.")) {
+    return false;
   }
 
-  return /(?:changeme|replace[_-]?me|your[_-]?(?:key|token|secret)|example[_-]?(?:key|token|secret))/i.test(
-    text,
+  const assignment =
+    /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(
+      text,
+    );
+  if (!assignment?.[1] || assignment[2] === undefined) {
+    return false;
+  }
+
+  const name = assignment[1];
+  const value = assignment[2].trim().replace(/^(['"])(.*)\1$/, "$2").trim();
+  return (
+    /(?:private[_-]?key|api[_-]?key|secret|token|password|passwd|pwd|mnemonic|seed[_-]?phrase)/i.test(
+      name,
+    ) &&
+    value.length >= 8 &&
+    !/^(?:0x)?0+$/.test(value) &&
+    !/^<[^>]+>$/.test(value) &&
+    !/^\$\{[^}]+\}$/.test(value)
   );
 }
 
