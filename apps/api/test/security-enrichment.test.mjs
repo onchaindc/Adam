@@ -177,7 +177,11 @@ describe("security enrichment", () => {
     assert.equal(runtimeCalls, 1);
   });
 
-  it("finds a secret removed from the current Git snapshot", async () => {
+  it("finds a secret removed from the current Git snapshot", async (t) => {
+    if (!hasGit()) {
+      t.skip("Git is unavailable in this build environment.");
+      return;
+    }
     const root = await mkdtemp(join(tmpdir(), "adam-history-test-"));
     const secret = "history-only-sensitive-value-12345";
 
@@ -277,4 +281,16 @@ function git(cwd, ...args) {
     stdio: "ignore",
     windowsHide: true,
   });
+}
+
+function hasGit() {
+  try {
+    execFileSync("git", ["--version"], {
+      stdio: "ignore",
+      windowsHide: true,
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
