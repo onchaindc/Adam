@@ -9,6 +9,14 @@ import type {
   SecurityInspector,
 } from "./types.js";
 
+export interface SecretLineDetection {
+  readonly ruleId: string;
+  readonly title: string;
+  readonly severity: SecurityFindingCandidate["severity"];
+  readonly description: string;
+  readonly confidence: SecurityFindingCandidate["confidence"];
+}
+
 const secretRules = [
   {
     ruleId: "SEC-AWS-ACCESS-KEY",
@@ -63,68 +71,77 @@ export class SecretsScanner implements SecurityInspector {
     const findings: SecurityFindingCandidate[] = [];
 
     for (const source of collectSourceLines(model.files)) {
-      if (isPlaceholderValue(source.text)) {
-        continue;
-      }
-
-      let matchedSpecificRule = false;
-      for (const rule of secretRules) {
-        if (!rule.pattern.test(source.text)) {
-          continue;
-        }
-
-        matchedSpecificRule = true;
+      for (const detection of detectSecretsInLine(
+        source.file.path,
+        source.text,
+      )) {
         findings.push({
-          ruleId: rule.ruleId,
+          ruleId: detection.ruleId,
           category: this.category,
-          title: rule.title,
-          severity: rule.severity,
+          title: detection.title,
+          severity: detection.severity,
           file: source.file.path,
           line: source.line,
-          description: "A value matching a credential pattern is stored in source text.",
+          description: detection.description,
           evidence: redactAssignment(source.text),
-          confidence: isLikelyTestOrExample(source.file.path) ? "medium" : "high",
-        });
-      }
-
-      if (
-        !matchedSpecificRule &&
-        isPopulatedSensitiveEnvironmentAssignment(
-          source.file.path,
-          source.text,
-        )
-      ) {
-        findings.push({
-          ruleId: "SEC-POPULATED-ENV-SECRET",
-          category: this.category,
-          title: "Populated sensitive environment value",
-          severity: "high",
-          file: source.file.path,
-          line: source.line,
-          description:
-            "A committed environment file contains a non-placeholder value assigned to a sensitive variable name. The value may be test data, but it should be reviewed and removed or replaced with an empty placeholder.",
-          evidence: redactAssignment(source.text),
-          confidence: "high",
-        });
-      }
-
-      if (isMnemonicAssignment(source.text)) {
-        findings.push({
-          ruleId: "SEC-MNEMONIC",
-          category: this.category,
-          title: "Likely mnemonic phrase",
-          severity: "critical",
-          file: source.file.path,
-          line: source.line,
-          description: "A seed or mnemonic variable contains a likely recovery phrase.",
-          evidence: redactAssignment(source.text),
-          confidence: isLikelyTestOrExample(source.file.path) ? "medium" : "high",
+          confidence: detection.confidence,
         });
       }
     }
 
     return findings;
   }
+}
+
+export function detectSecretsInLine(
+  path: string,
+  text: string,
+): readonly SecretLineDetection[] {
+  if (isPlaceholderValue(text)) {
+    return [];
+  }
+
+  const confidence = isLikelyTestOrExample(path) ? "medium" : "high";
+  const detections: SecretLineDetection[] = [];
+  for (const rule of secretRules) {
+    if (rule.pattern.test(text)) {
+      detections.push({
+        ruleId: rule.ruleId,
+        title: rule.title,
+        severity: rule.severity,
+        description:
+          "A value matching a credential pattern is stored in source text.",
+        confidence,
+      });
+    }
+  }
+
+  if (
+    detections.length === 0 &&
+    isPopulatedSensitiveEnvironmentAssignment(path, text)
+  ) {
+    detections.push({
+          ruleId: "SEC-POPULATED-ENV-SECRET",
+          title: "Populated sensitive environment value",
+          severity: "high",
+          description:
+            "A committed environment file contains a non-placeholder value assigned to a sensitive variable name. The value may be test data, but it should be reviewed and removed or replaced with an empty placeholder.",
+          confidence: "high",
+    });
+  }
+
+  if (isMnemonicAssignment(text)) {
+    detections.push({
+      ruleId: "SEC-MNEMONIC",
+      title: "Likely mnemonic phrase",
+      severity: "critical",
+      description:
+        "A seed or mnemonic variable contains a likely recovery phrase.",
+      confidence,
+    });
+  }
+
+  return detections;
 }
 
 function isPlaceholderValue(text: string): boolean {

@@ -91,6 +91,24 @@ const environmentSchema = z
       .min(1)
       .max(1_000)
       .default(100),
+    GIT_HISTORY_MAX_COMMITS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(1_000)
+      .default(100),
+    GIT_HISTORY_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1_000)
+      .max(120_000)
+      .default(30_000),
+    GIT_HISTORY_MAX_PATCH_BYTES: z.coerce
+      .number()
+      .int()
+      .min(64_000)
+      .max(50_000_000)
+      .default(5_000_000),
     RUNTIME_SANDBOX_ENABLED: z
       .enum(["true", "false"])
       .default("false")

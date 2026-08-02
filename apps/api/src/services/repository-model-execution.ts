@@ -1,14 +1,21 @@
 import type { RepositoryModel } from "../investigation/repository/model.js";
 import type { RepositoryScanner } from "../investigation/repository/repository-scanner.js";
-import type { GitHubRepositoryAcquirer } from "../platform/github/github-repository.js";
+import type {
+  GitHubRepositoryAcquirer,
+  GitHubRepositoryAcquisitionOptions,
+} from "../platform/github/github-repository.js";
 
 export async function withRepositoryModel<Result>(
   acquirer: GitHubRepositoryAcquirer,
   scanner: RepositoryScanner,
   repositoryUrl: string,
   execute: (model: RepositoryModel) => Promise<Result> | Result,
+  acquisitionOptions: GitHubRepositoryAcquisitionOptions = {},
 ): Promise<Result> {
-  const acquired = await acquirer.acquire(repositoryUrl);
+  const acquired = await acquirer.acquire(
+    repositoryUrl,
+    acquisitionOptions,
+  );
 
   try {
     const model = await scanner.scan(acquired.directory, {

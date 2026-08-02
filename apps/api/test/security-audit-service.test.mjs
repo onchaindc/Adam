@@ -67,7 +67,103 @@ describe("SecurityAuditService", () => {
     assert.equal(response.findings[0].intelligence.evidenceReferences[0], "ADAM-SEC-0001");
     assert.equal(response.securityScore.value < 100, true);
     assert.equal(response.report.highFindings.length, 1);
+    assert.equal(response.coverage.assurance, "limited");
+    assert.equal(
+      response.coverage.checks.find(
+        ({ id }) => id === "git-history-secrets",
+      ).status,
+      "not-requested",
+    );
     assert.equal(cleaned, true);
+  });
+
+  it("requests bounded history and reports moderate live coverage", async () => {
+    let acquisitionOptions = null;
+    const service = new SecurityAuditService(
+      {
+        async acquire(_url, options) {
+          acquisitionOptions = options;
+          return {
+            reference: {
+              owner: "adam",
+              name: "fixture",
+              canonicalUrl: "https://github.com/adam/fixture.git",
+            },
+            directory: "temporary-repository",
+            defaultBranch: "main",
+            commitSha: "abc123",
+            async cleanup() {},
+          };
+        },
+      },
+      {
+        async scan() {
+          return createModel();
+        },
+      },
+      {
+        analyze() {
+          return {
+            modulesExecuted: ["secrets"],
+            filesAnalyzed: 1,
+            findings: [],
+            limitations: [],
+          };
+        },
+      },
+      new SecurityIntelligenceEngine(),
+      undefined,
+      null,
+      {
+        async analyze() {
+          return {
+            findings: [],
+            limitations: [],
+            summary: {
+              liveVulnerabilities: {
+                status: "completed",
+                provider: "OSV",
+                queriedAt: "2026-08-02T00:00:00.000Z",
+                packagesChecked: 1,
+                advisoriesFound: 0,
+                limitation: null,
+              },
+              gitHistorySecrets: {
+                status: "partial",
+                commitsScanned: 25,
+                findingsFound: 0,
+                depthLimit: 25,
+                limitation: "Bounded history.",
+              },
+              runtimeAnalysis: {
+                status: "not-requested",
+                sandbox: "docker",
+                checks: [],
+                limitation: null,
+              },
+            },
+          };
+        },
+      },
+      25,
+    );
+
+    const response = await service.execute({
+      requestId: "request-live",
+      input: {
+        repositoryUrl: "https://github.com/adam/fixture",
+        securityProfile: "live",
+      },
+    });
+
+    assert.deepEqual(acquisitionOptions, { cloneDepth: 25 });
+    assert.equal(response.coverage.assurance, "moderate");
+    assert.equal(
+      response.coverage.checks.find(
+        ({ id }) => id === "git-history-secrets",
+      ).status,
+      "partial",
+    );
   });
 
   it("cleans the acquired repository when analysis fails", async () => {

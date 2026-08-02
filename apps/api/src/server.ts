@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { AuthenticationAuthorizationInspector } from "./analyzers/security/authentication-authorization-inspector.js";
 import { ConfigurationInspector } from "./analyzers/security/configuration-inspector.js";
 import { DependencyInspector } from "./analyzers/security/dependency-inspector.js";
+import { DefaultGitHistorySecretInspector } from "./analyzers/security/git-history-secret-inspector.js";
 import { LiveVulnerabilityInspector } from "./analyzers/security/live-vulnerability-inspector.js";
 import { SecretsScanner } from "./analyzers/security/secrets-scanner.js";
 import { SecurityAuditEngine } from "./analyzers/security/security-audit-engine.js";
@@ -84,6 +85,11 @@ const securityEnrichment = new SecurityEnrichmentEngine(
     pidsLimit: environment.RUNTIME_SANDBOX_PIDS,
     maxPackages: environment.RUNTIME_SANDBOX_MAX_PACKAGES,
   }),
+  new DefaultGitHistorySecretInspector({
+    maxCommits: environment.GIT_HISTORY_MAX_COMMITS,
+    timeoutMs: environment.GIT_HISTORY_TIMEOUT_MS,
+    maxPatchBytes: environment.GIT_HISTORY_MAX_PATCH_BYTES,
+  }),
 );
 const traceability = new EvidenceTraceabilityEngine(
   new EvidenceLinkResolver(),
@@ -110,6 +116,7 @@ const securityAuditService = new SecurityAuditService(
   traceability,
   aiIntelligence,
   securityEnrichment,
+  environment.GIT_HISTORY_MAX_COMMITS,
 );
 const pullRequestReviewService = new PullRequestReviewService(
   new PullRequestFetcher({

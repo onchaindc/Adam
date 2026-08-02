@@ -36,6 +36,9 @@ OSV_API_URL=https://api.osv.dev
 OSV_API_TIMEOUT_MS=20000
 OSV_MAX_PACKAGES=500
 OSV_MAX_ADVISORIES=100
+GIT_HISTORY_MAX_COMMITS=100
+GIT_HISTORY_TIMEOUT_MS=30000
+GIT_HISTORY_MAX_PATCH_BYTES=5000000
 RUNTIME_SANDBOX_ENABLED=false
 RUNTIME_SANDBOX_IMAGE=node:24.18.0-bookworm-slim
 RUNTIME_SANDBOX_TIMEOUT_MS=90000
@@ -59,10 +62,17 @@ Railway injects `PORT`; do not hardcode it.
 Railway secret to increase GitHub API rate limits. It does not enable private
 repository support.
 
-The Security Audit defaults to `securityProfile=static`. The `live` profile
-uses OSV to query current advisories for exact package versions. Responses are
-time-stamped and bounded by the configured package, advisory, and timeout
-limits.
+The Security Audit defaults to `securityProfile=static`, which fetches one
+commit and performs snapshot-only analysis. The `live` profile uses OSV to
+query current advisories for exact package versions and fetches bounded
+default-branch history for secret scanning. Responses are time-stamped and
+bounded by the configured package, advisory, Git commit, patch-byte, and
+timeout limits. The `sandboxed` profile uses the same history and advisory
+coverage before attempting isolated runtime checks.
+
+Increasing `GIT_HISTORY_MAX_COMMITS` increases clone and analysis work.
+History scanning covers the acquired default branch only; reports disclose
+partial coverage when the clone is shallow or the patch-byte limit is reached.
 
 The `sandboxed` profile requires `RUNTIME_SANDBOX_ENABLED=true`, Docker daemon
 access, and a trusted configured image. A normal Railway service does not
@@ -102,8 +112,9 @@ After deployment, verify:
 2. `GET /health` returns HTTP 200.
 3. `POST /repository/summary` returns HTTP 200 for a small public GitHub
    repository.
-4. `POST /audit` returns HTTP 200 with enriched findings, a versioned security
-   score, recommended fix order, and structured report.
+4. `POST /audit` returns HTTP 200 with enriched findings, explicit coverage and
+   assurance metadata, a versioned security score, recommended fix order, and
+   structured report.
 5. `POST /investigate` returns HTTP 200 with a structured, evidence-backed
    investigation result for a valid public repository and bounded logs.
 6. `POST /plan` returns HTTP 200 with deterministic intent classification,

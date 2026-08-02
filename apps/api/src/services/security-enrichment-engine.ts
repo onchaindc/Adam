@@ -8,6 +8,11 @@ import type {
   LiveVulnerabilityInspection,
   LiveVulnerabilityInspector,
 } from "../analyzers/security/live-vulnerability-inspector.js";
+import {
+  notRequestedGitHistorySecrets,
+  type GitHistorySecretInspection,
+  type GitHistorySecretInspector,
+} from "../analyzers/security/git-history-secret-inspector.js";
 import type { SecurityFindingCandidate } from "../analyzers/security/types.js";
 import type { RepositoryModel } from "../investigation/repository/model.js";
 import type { RuntimeAnalyzer } from "../runtime/docker-runtime-analyzer.js";
@@ -22,6 +27,8 @@ export class SecurityEnrichmentEngine {
   public constructor(
     private readonly liveVulnerabilities: LiveVulnerabilityInspector,
     private readonly runtimeAnalyzer: RuntimeAnalyzer,
+    private readonly gitHistorySecrets: GitHistorySecretInspector =
+      new NoopGitHistorySecretInspector(),
   ) {}
 
   public async analyze(
@@ -32,19 +39,25 @@ export class SecurityEnrichmentEngine {
       profile === "static"
         ? notRequestedLiveVulnerabilities()
         : await this.liveVulnerabilities.inspect(model);
+    const history =
+      profile === "static"
+        ? notRequestedGitHistoryInspection()
+        : await this.gitHistorySecrets.inspect(model);
     const runtime =
       profile === "sandboxed"
         ? await this.runtimeAnalyzer.analyze(model)
         : notRequestedRuntimeAnalysis();
 
     return {
-      findings: live.findings,
+      findings: [...live.findings, ...history.findings],
       limitations: [
         ...live.limitations,
+        ...history.limitations,
         ...(runtime.limitation ? [runtime.limitation] : []),
       ],
       summary: {
         liveVulnerabilities: live.summary,
+        gitHistorySecrets: history.summary,
         runtimeAnalysis: runtime,
       },
     };
@@ -66,9 +79,18 @@ export function staticSecurityEnrichment(): SecurityEnrichmentResult {
     limitations: [],
     summary: {
       liveVulnerabilities: notRequestedLiveVulnerabilities().summary,
+      gitHistorySecrets: notRequestedGitHistorySecrets(),
       runtimeAnalysis: notRequestedRuntimeAnalysis(),
     },
   };
+}
+
+class NoopGitHistorySecretInspector implements GitHistorySecretInspector {
+  public async inspect(
+    _model: RepositoryModel,
+  ): Promise<GitHistorySecretInspection> {
+    return notRequestedGitHistoryInspection();
+  }
 }
 
 function notRequestedLiveVulnerabilities(): LiveVulnerabilityInspection {
@@ -92,5 +114,13 @@ function notRequestedRuntimeAnalysis(): RuntimeAnalysis {
     sandbox: "docker",
     checks: [],
     limitation: null,
+  };
+}
+
+function notRequestedGitHistoryInspection(): GitHistorySecretInspection {
+  return {
+    findings: [],
+    limitations: [],
+    summary: notRequestedGitHistorySecrets(),
   };
 }

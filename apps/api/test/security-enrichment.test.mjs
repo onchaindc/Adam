@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, it } from "node:test";
 
+import { DefaultGitHistorySecretInspector } from "../dist/analyzers/security/git-history-secret-inspector.js";
 import { LiveVulnerabilityInspector } from "../dist/analyzers/security/live-vulnerability-inspector.js";
 import { extractPackageCoordinates } from "../dist/analyzers/security/package-coordinate-extractor.js";
 import { OsvClient } from "../dist/platform/osv/osv-client.js";
@@ -106,6 +111,7 @@ describe("security enrichment", () => {
 
   it("keeps static analysis offline and only runs the sandbox when requested", async () => {
     let liveCalls = 0;
+    let historyCalls = 0;
     let runtimeCalls = 0;
     const engine = new SecurityEnrichmentEngine(
       {
@@ -136,20 +142,79 @@ describe("security enrichment", () => {
           };
         },
       },
+      {
+        async inspect() {
+          historyCalls += 1;
+          return {
+            findings: [],
+            limitations: [],
+            summary: {
+              status: "completed",
+              commitsScanned: 2,
+              findingsFound: 0,
+              depthLimit: 10,
+              limitation: null,
+            },
+          };
+        },
+      },
     );
     const model = createModel({});
 
     await engine.analyze(model, "static");
     assert.equal(liveCalls, 0);
+    assert.equal(historyCalls, 0);
     assert.equal(runtimeCalls, 0);
 
     await engine.analyze(model, "live");
     assert.equal(liveCalls, 1);
+    assert.equal(historyCalls, 1);
     assert.equal(runtimeCalls, 0);
 
     await engine.analyze(model, "sandboxed");
     assert.equal(liveCalls, 2);
+    assert.equal(historyCalls, 2);
     assert.equal(runtimeCalls, 1);
+  });
+
+  it("finds a secret removed from the current Git snapshot", async () => {
+    const root = await mkdtemp(join(tmpdir(), "adam-history-test-"));
+    const secret = "history-only-sensitive-value-12345";
+
+    try {
+      git(root, "init");
+      git(root, "config", "user.email", "adam@example.test");
+      git(root, "config", "user.name", "Adam Test");
+      await writeFile(join(root, ".env"), `PRIVATE_KEY=${secret}\n`);
+      git(root, "add", ".env");
+      git(root, "commit", "-m", "add test value");
+      await writeFile(join(root, ".env"), "PRIVATE_KEY=\n");
+      git(root, "add", ".env");
+      git(root, "commit", "-m", "remove test value");
+
+      const inspector = new DefaultGitHistorySecretInspector({
+        maxCommits: 10,
+        timeoutMs: 10_000,
+        maxPatchBytes: 1_000_000,
+      });
+      const result = await inspector.inspect({
+        ...createModel({}),
+        rootDirectory: root,
+      });
+
+      assert.equal(result.summary.status, "completed");
+      assert.equal(result.summary.commitsScanned, 2);
+      assert.equal(result.summary.findingsFound, 1);
+      assert.equal(
+        result.findings[0].ruleId,
+        "HISTORY-SEC-POPULATED-ENV-SECRET",
+      );
+      assert.equal(result.findings[0].file, ".env");
+      assert.match(result.findings[0].evidence, /\[REDACTED\]/);
+      assert.equal(result.findings[0].evidence.includes(secret), false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it("refuses host execution when the Docker sandbox is disabled", async () => {
@@ -204,4 +269,12 @@ function createModel(manifestContents) {
       limitations: [],
     },
   };
+}
+
+function git(cwd, ...args) {
+  execFileSync("git", args, {
+    cwd,
+    stdio: "ignore",
+    windowsHide: true,
+  });
 }

@@ -23,13 +23,21 @@ export interface GitHubRepositoryAcquirerOptions {
   readonly cloneTimeoutMs: number;
 }
 
+export interface GitHubRepositoryAcquisitionOptions {
+  readonly cloneDepth?: number;
+}
+
 export class GitHubRepositoryAcquirer {
   public constructor(
     private readonly options: GitHubRepositoryAcquirerOptions,
   ) {}
 
-  public async acquire(repositoryUrl: string): Promise<AcquiredRepository> {
+  public async acquire(
+    repositoryUrl: string,
+    acquisition: GitHubRepositoryAcquisitionOptions = {},
+  ): Promise<AcquiredRepository> {
     const reference = parseGitHubRepositoryUrl(repositoryUrl);
+    const cloneDepth = acquisition.cloneDepth ?? 1;
     const workspace = await mkdtemp(join(tmpdir(), "adam-repository-"));
     const repositoryDirectory = join(workspace, "repository");
     const hooksDirectory = join(workspace, "hooks-disabled");
@@ -44,7 +52,7 @@ export class GitHubRepositoryAcquirer {
           "-c",
           "credential.helper=",
           "clone",
-          "--depth=1",
+          `--depth=${cloneDepth}`,
           "--single-branch",
           "--no-tags",
           "--",

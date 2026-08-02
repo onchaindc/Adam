@@ -56,6 +56,8 @@ Sprints 1 through 7 are approved. The repository now contains:
   into the existing static-pattern inspector;
 - opt-in live dependency advisory enrichment through OSV with time-stamped
   results;
+- bounded default-branch Git-history secret scanning for live and sandboxed
+  audits, including credentials removed from the current snapshot;
 - opt-in Docker-isolated Node.js build and test validation with fail-closed
   host execution controls;
 - structured logging and persistent operational runtime state;
@@ -64,7 +66,7 @@ Sprints 1 through 7 are approved. The repository now contains:
 Conversational chat, new services, and new A2MCP integrations remain
 intentionally unimplemented.
 
-Last documentation review: **July 29, 2026**
+Last documentation review: **August 2, 2026**
 
 ## Initial services
 
@@ -79,14 +81,16 @@ Given a public GitHub repository, Adam:
 - detect deterministic static security patterns;
 - explain every finding using its recorded evidence;
 - calculate transparent category and overall security scores;
+- report explicit coverage and assurance separately from the security score;
 - return severity-grouped findings, a recommended fix order, and a structured
   professional report.
 
 The default `static` security profile remains deterministic and offline.
-`live` adds exact-version OSV advisory checks, while `sandboxed` also runs
-supported Node.js build and test scripts in a constrained Docker environment.
-Sandbox results strengthen evidence but do not claim proven reachability or
-exploitability.
+`live` adds exact-version OSV advisory checks and bounded secret scanning
+across the acquired default-branch Git history. `sandboxed` also runs supported
+Node.js build and test scripts in a constrained Docker environment. Coverage
+and assurance metadata make these boundaries explicit; even a `100/100` score
+is not a guarantee that a repository or deployment is vulnerability-free.
 
 ### Root Cause Investigation
 
@@ -151,9 +155,10 @@ language.
 
 The existing deterministic static-pattern inspector consumes one canonical
 language-rule registry. It detects bounded language-specific security and
-reliability patterns without executing repository code. Live advisory lookup
-and sandboxed runtime validation are separate, explicitly requested security
-profiles.
+reliability patterns without executing repository code. Live advisory lookup,
+Git-history secret scanning, and sandboxed runtime validation are separate,
+explicitly reported coverage checks selected through the requested security
+profile.
 
 ## Product principles
 
@@ -404,14 +409,20 @@ Each milestone requires review before the next milestone begins.
   exploitability.
 - Live OSV results reflect the advisory database at the response's `queriedAt`
   timestamp and depend on exact versions available in supported lockfiles.
+- Git-history secret scanning is bounded by commit count, patch bytes, and
+  timeout. It covers the acquired default branch, not older commits outside the
+  configured depth, other branches, forks, rewritten history, or cached copies.
 - Sandboxed execution disables dependency lifecycle scripts and applies
   network, filesystem, capability, process, resource, and time restrictions,
   but it does not prove vulnerability exploitability.
-- Repository acquisition is shallow, non-interactive, temporary, and bounded by
-  configurable clone-time, file-count, and directory-depth limits.
-- Remote audits can inspect only files present in the fetched Git commit;
-  local, untracked, gitignored, deleted, and deployment-only secrets are not
-  available to Adam.
+- Repository acquisition is non-interactive, temporary, and bounded by
+  configurable clone-time, history-depth, file-count, and directory-depth
+  limits. Static audits fetch one commit; live and sandboxed audits fetch
+  bounded default-branch history.
+- Remote snapshot audits can inspect only files present in the fetched Git
+  commit. Local, untracked, gitignored, and deployment-only secrets are not
+  available to Adam; deleted committed secrets are detectable only when their
+  introducing patch is inside the acquired history bounds.
 - Private repository authentication, arbitrary log URLs, asynchronous jobs, and
   A2A task handling are outside the initial approved scope.
 - Intelligent mode requires an explicitly configured provider key. Production

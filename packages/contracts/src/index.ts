@@ -276,6 +276,7 @@ export interface SecurityAuditResponse {
   readonly report: SecurityReport;
   readonly limitations: readonly string[];
   readonly enrichment: SecurityAuditEnrichment;
+  readonly coverage: SecurityAuditCoverage;
 }
 
 export interface LiveVulnerabilityAnalysis {
@@ -303,8 +304,47 @@ export interface RuntimeAnalysis {
   readonly limitation: string | null;
 }
 
+export interface GitHistorySecretAnalysis {
+  readonly status:
+    | "not-requested"
+    | "completed"
+    | "partial"
+    | "failed";
+  readonly commitsScanned: number;
+  readonly findingsFound: number;
+  readonly depthLimit: number;
+  readonly limitation: string | null;
+}
+
+export type SecurityCoverageStatus =
+  | "completed"
+  | "partial"
+  | "not-requested"
+  | "skipped"
+  | "failed";
+
+export interface SecurityCoverageCheck {
+  readonly id:
+    | "repository-snapshot"
+    | "static-analysis"
+    | "live-vulnerabilities"
+    | "git-history-secrets"
+    | "runtime-analysis";
+  readonly name: string;
+  readonly status: SecurityCoverageStatus;
+  readonly summary: string;
+  readonly limitation: string | null;
+}
+
+export interface SecurityAuditCoverage {
+  readonly schemaVersion: "1.0";
+  readonly assurance: "limited" | "moderate" | "strong";
+  readonly checks: readonly SecurityCoverageCheck[];
+}
+
 export interface SecurityAuditEnrichment {
   readonly liveVulnerabilities: LiveVulnerabilityAnalysis;
+  readonly gitHistorySecrets: GitHistorySecretAnalysis;
   readonly runtimeAnalysis: RuntimeAnalysis;
 }
 

@@ -12,6 +12,7 @@ import {
   staticSecurityEnrichment,
   type SecurityEnrichmentResult,
 } from "./security-enrichment-engine.js";
+import { buildSecurityAuditCoverage } from "./security-audit-coverage.js";
 
 export function analyzeSecurityModel(input: {
   readonly requestId: string;
@@ -55,6 +56,12 @@ export function analyzeSecurityModel(input: {
       report: intelligence.report,
       limitations: intelligence.report.limitations,
       enrichment: enrichment.summary,
+      coverage: buildSecurityAuditCoverage({
+        model: input.model,
+        profile: securityProfile,
+        modulesExecuted: result.modulesExecuted,
+        enrichment: enrichment.summary,
+      }),
     },
     input.analysisMode,
   );

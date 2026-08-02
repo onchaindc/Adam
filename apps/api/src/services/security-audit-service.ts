@@ -43,6 +43,7 @@ export class SecurityAuditService implements AdamService {
     private readonly aiIntelligence: AiIntelligenceEngine | null = null,
     private readonly enrichment: Pick<SecurityEnrichmentEngine, "analyze"> =
       new NoopSecurityEnrichmentEngine(),
+    private readonly historyDepth = 1,
   ) {}
 
   public async execute(request: ServiceRequest): Promise<SecurityAuditResponse> {
@@ -70,6 +71,9 @@ export class SecurityAuditService implements AdamService {
               this.aiIntelligence,
             ).enhanceSecurity(response)
           : response;
+      },
+      {
+        cloneDepth: securityProfile === "static" ? 1 : this.historyDepth,
       },
     );
   }
