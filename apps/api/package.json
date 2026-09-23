@@ -21,7 +21,7 @@
     "pino": "10.3.1",
     "pino-http": "11.0.0",
     "yaml": "^2.9.0",
-    "zod": "4.4.3"
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/express": "5.0.6",
