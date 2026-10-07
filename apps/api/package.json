@@ -18,7 +18,7 @@
   "dependencies": {
     "@adam/contracts": "workspace:*",
     "express": "5.2.1",
-    "pino": "10.3.1",
+    "pino": "10.4.0",
     "pino-http": "11.0.0",
     "yaml": "^2.9.0",
     "zod": "4.4.3"
